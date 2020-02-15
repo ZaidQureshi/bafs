@@ -1,4 +1,4 @@
-#ifdef __BAFS_NVME_LIST_H__
+#ifndef __BAFS_NVME_LIST_H__
 #define __BAFS_NVME_LIST_H__
 
 #include <linux/types.h>
