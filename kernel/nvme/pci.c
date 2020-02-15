@@ -62,5 +62,3 @@ static int mmap_registers(struct file* file, struct vm_area_struct* vma)
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 	return vm_iomap_memory(vma, pci_resource_start(ctrl->pdev, 0), vma->vm_end - vma->vm_start);
 }
-
-test
