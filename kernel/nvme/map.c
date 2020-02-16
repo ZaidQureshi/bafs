@@ -32,7 +32,7 @@ struct gpu_region
 
 static struct map* create_decriptor(const struct ctrl* ctrl, u64 vaddr, unsigned long n_pages) {
   unsigned long i;
-  struct map* m = NULL;
+  struct map*   m = NULL;
 
 
   printk(KERN_WARNING "[create_descriptor] n_pages = %lu", n_pages);
@@ -117,9 +117,9 @@ static void release_user_pages(struct map* m) {
 
 
 static long map_user_pages(struct map* m) {
-  unsigned long i;
-  long retv;
-  struct page** ps;
+  unsigned long  i;
+  long           retv;
+  struct page**  ps;
   struct device* dev;
 
   ps = (struct page**) kcalloc(m->n_addrs, sizeof(struct page*), GFP_KERNEL);
@@ -129,11 +129,11 @@ static long map_user_pages(struct map* m) {
   }
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 5, 7)
-  retv = get_user_pages(current, current->mm, m->vaddr, m->n_addrs, 1, 0, ps, NULL);
+  retv                   = get_user_pages(current, current->mm, m->vaddr, m->n_addrs, 1, 0, ps, NULL);
 #eli LINUX_VERSION_CODE <= KERNEL_VERSION(4, 8, 17)
-  retv = get_user_pages(m->vaddr, m->n_addrs, 1, 0, ps, NULL);
+  retv                   = get_user_pages(m->vaddr, m->n_addrs, 1, 0, ps, NULL);
 #else
-  retv = get_user_pages(m->vaddr, m->n_addrs, FOLL_WRITE, ps, NULL);
+  retv                   = get_user_pages(m->vaddr, m->n_addrs, FOLL_WRITE, ps, NULL);
 #endif
 
   if (retv <= 0) {
@@ -149,16 +149,16 @@ static long map_user_pages(struct map* m) {
   }
   m->n_addrs = retv;
   m->page_size = PAGE_SIZE;
-  m->data = (void*) ps;
+  m->data      = (void*) ps;
   m->release = release_user_pages;
 
   dev = &m->pdev->dev;
 
   for (i = 0; i < m->n_addrs; i++) {
-    m->addrs[i] = dma_map_page(dev, ps[i], 0, PAGE_SIZE, DMA_BIDIRECTIONAL);
-    retv = dma_mapping_error(dev, m->addrs[i]);
+    m->addrs[i]   = dma_map_page(dev, ps[i], 0, PAGE_SIZE, DMA_BIDIRECTIONAL);
+    retv          = dma_mapping_error(dev, m->addrs[i]);
     if (retval != 0) {
-      printk(KERN_ERR "[map_user_pages] Failed to map pages %ld", retval);
+      printk(KERN_ERR "[map_user_pages] Failed to map pages %ld\n", retval);
       m->addrs[i] = 0;
       return retv;
     }
@@ -184,7 +184,7 @@ struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsig
 
   m->page_size = PAGE_SIZE;
 
-  err = map_user_pages(m);
+  err      = map_user_pages(m);
   if (err != 0) {
     unmap_and_release(m);
     return ERR_PTR(err);
