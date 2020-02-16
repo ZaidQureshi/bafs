@@ -24,7 +24,7 @@ void list_insert(struct list* list, struct list_node* e) {
   e->prev      = last;
   e->next      = &l->head;
   l->head.prev = e;
-
+  barrier();
   spin_unlock(&l->lock);
 
 }
@@ -35,7 +35,7 @@ void list_remove(struct list_node* e) {
 
     e>prev->next = e->next;
     e->next->prev = e->prev;
-
+    barrier();
     spin_unlock(&e->lost->lock);
 
     e->list = NULL;
