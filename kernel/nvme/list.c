@@ -13,7 +13,7 @@ void list_init(struct list* l) {
   spin_lock_init(&l->lock);
 }
 
-void list_insert(struct list* list, struct list_node* e) {
+void list_insert(struct list* l, struct list_node* e) {
   struct list_node* last = NULL;
 
   spin_lock(&l->lock);
@@ -30,13 +30,13 @@ void list_insert(struct list* list, struct list_node* e) {
 }
 
 void list_remove(struct list_node* e) {
-  if (likely((e   != NULL) && (e->list != NULL) && (e != &e->list->head))) {
-    spin_lock(&->list->lock);
+  if (likely((e != NULL) && (e->list != NULL) && (e != &e->list->head))) {
+    spin_lock(&e->list->lock);
 
-    e>prev->next = e->next;
+    e->prev->next = e->next;
     e->next->prev = e->prev;
     barrier();
-    spin_unlock(&e->lost->lock);
+    spin_unlock(&e->list->lock);
 
     e->list = NULL;
     e->next = NULL;

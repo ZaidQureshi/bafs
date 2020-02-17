@@ -11,7 +11,7 @@ struct ctrl {
   struct list_node list;
   struct pci_dev* pdev;
   char name[64];
-  int number
+  int number;
   dev_t rdev;
   struct class* cls;
   struct cdev cdev;
@@ -27,7 +27,7 @@ struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pd
 
 struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind);
 
-long ctrl_chrdev_create(struct ctrl* c, dev first, const struct file_operations* fops);
+long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops);
 
 
 void ctrl_chrdev_remove(struct ctrl* c);

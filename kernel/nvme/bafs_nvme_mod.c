@@ -11,18 +11,21 @@
 #include <linux/err.h>
 #include <linux/device.h>
 #include <linux/uaccess.h>
+#include <linux/mm_types.h>
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/page.h>
 
+
+MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Zaid Qureshi <zaidq2@illinois.edu>");
 MODULE_DESCRIPTION("BAFS NVMe driver");
-MODULE_LICENSE("GPL");
 MODULE_VERSION("0.1");
 
 #define DRIVER_NAME         "bafs_nvme"
 #define PCI_CLASS_NVME      0x010802
 #define PCI_CLASS_NVME_MASK 0xffffff
+
 
 
 static const struct pci_device_id id_table[] =
@@ -53,7 +56,7 @@ MODULE_PARM_DESC(num_ctrls, "Number of controller devices");
 static int curr_ctrls = 0;
 
 
-static int mmap_regs(struct file* f, struct vma_area_struct* vma) {
+static int mmap_regs(struct file* f, struct vm_area_struct* vma) {
   struct ctrl* c = NULL;
 
   c = ctrl_find_by_inode(&ctrl_list, f->f_inode);
@@ -80,7 +83,7 @@ static const struct file_operations dev_fops =
   };
 
 
-static long add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
+static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     long err;
     struct ctrl* c = NULL;
 
@@ -92,7 +95,7 @@ static long add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     printk(KERN_INFO "[add_pci_dev] Adding controller device: %02x:%02x.%1x",
            pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
 
-    c = ctrl_get(&ctrl_list, dev_class, dev, curr_ctrls);
+    c = ctrl_get(&ctrl_list, dev_class, pdev, curr_ctrls);
     if (IS_ERR(c)) {
       return PTR_ERR(c);
     }
@@ -104,9 +107,9 @@ static long add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return err;
     }
 
-    err = pci_enable_device(dev);
+    err = pci_enable_device(pdev);
     if (err < 0) {
-      pci_release_region(dev, 0);
+      pci_release_region(pdev, 0);
       ctrl_put(c);
       printk(KERN_ERR "[add_pci_dev] Failed to enable controller\n");
       return err;
@@ -136,6 +139,7 @@ static void remove_pci_dev(struct pci_dev* pdev) {
   curr_ctrls--;
 
   c = ctrl_find_by_pci_dev(&ctrl_list, pdev);
+  printk(KERN_INFO "[remove_pci_dev] c = %p", c);
   ctrl_put(c);
 
   pci_release_region(pdev, 0);
@@ -143,7 +147,7 @@ static void remove_pci_dev(struct pci_dev* pdev) {
   pci_clear_master(pdev);
   pci_disable_device(pdev);
 
-  printk(KERN_INFO "[add_pci_dev] Removing controller device: %02x:%02x.%1x",
+  printk(KERN_INFO "[remove_pci_dev] Removing controller device: %02x:%02x.%1x",
          pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
 
 }
@@ -162,8 +166,8 @@ static unsigned long clear_map_list(struct list* l) {
   struct map* m;
 
   while(ptr != NULL) {
-    m = container_of(ptr, struct map, l);
-    unmap_and_release(m);
+    m = container_of(ptr, struct map, list);
+    unmap_and_release_map(m);
     i++;
     ptr = list_next(&l->head);
   }
@@ -204,6 +208,7 @@ static int __init bafs_nvme_init(void) {
   }
 
   printk(KERN_INFO "[bafs_nvme_init] Driver Loaded\n");
+  return 0;
 
 }
 

@@ -24,13 +24,13 @@ struct gpu_region
 };
 
 #endif
+*/
 
 #define GPU_PAGE_SHIFT 16
 #define GPU_PAGE_SIZE  (1UL << GPU_PAGE_SHIFT)
 #define GPU_PAGE_MASK  ~(GPU_PAGE_SIZE - 1)
-*/
 
-static struct map* create_decriptor(const struct ctrl* ctrl, u64 vaddr, unsigned long n_pages) {
+static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigned long n_pages) {
   unsigned long i;
   struct map*   m = NULL;
 
@@ -55,7 +55,7 @@ static struct map* create_decriptor(const struct ctrl* ctrl, u64 vaddr, unsigned
   m->release   = NULL;
   m->n_addrs   = n_pages;
 
-  for (i = 0; i < m->n_addres; i++) {
+  for (i = 0; i < m->n_addrs; i++) {
     m->addrs[i] = 0;
 
   }
@@ -77,14 +77,14 @@ void unmap_and_release_map(struct map* m) {
 }
 
 struct map* map_find(const struct list* l, u64 vaddr) {
-  const struct list_node* e = list_next(&list->head);
+  const struct list_node* e = list_next(&l->head);
   struct map*             m = NULL;
 
   while (e != NULL) {
-    m = container_of(e, struct map, l);
+    m = container_of(e, struct map, list);
     if ((m->owner == current)              &&
         ((m->vaddr == (vaddr & PAGE_MASK)) ||
-         (map->vaddr == (vaddr & GPU_PAGE_MASK)))) {
+         (m->vaddr == (vaddr & GPU_PAGE_MASK)))) {
       return m;
 
     }
@@ -103,12 +103,12 @@ static void release_user_pages(struct map* m) {
 
   dev = &m->pdev->dev;
   for (i = 0; i < m->n_addrs; i++) {
-    dma_unmap_page(dev, m->addres[i], PAGE_SIZE, DMA_BIDIRECTIONAL);
+    dma_unmap_page(dev, m->addrs[i], PAGE_SIZE, DMA_BIDIRECTIONAL);
   }
 
   ps = (struct page**) m->data;
   for (i = 0; i < m->n_addrs; i++) {
-    put_pages(ps[i]);
+    put_page(ps[i]);
   }
 
   kfree(m->data);
@@ -142,9 +142,9 @@ static long map_user_pages(struct map* m) {
     return retv;
   }
 
-  if (m->n_addrs != retval) {
+  if (m->n_addrs != retv) {
 
-    printk(KERN_WARNING "[map_user_pages] requested %lu pages, but only got %ld\n" m->n_addrs, retv);
+    printk(KERN_WARNING "[map_user_pages] requested %lu pages, but only got %ld\n", m->n_addrs, retv);
 
   }
   m->n_addrs = retv;
@@ -157,8 +157,8 @@ static long map_user_pages(struct map* m) {
   for (i = 0; i < m->n_addrs; i++) {
     m->addrs[i]   = dma_map_page(dev, ps[i], 0, PAGE_SIZE, DMA_BIDIRECTIONAL);
     retv          = dma_mapping_error(dev, m->addrs[i]);
-    if (retval != 0) {
-      printk(KERN_ERR "[map_user_pages] Failed to map pages %ld\n", retval);
+    if (retv != 0) {
+      printk(KERN_ERR "[map_user_pages] Failed to map pages %ld\n", retv);
       m->addrs[i] = 0;
       return retv;
     }
@@ -177,7 +177,7 @@ struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsig
     return ERR_PTR(-EINVAL);
   }
 
-  m = create_descriptor(c, vaddr & PAGE_MASK, n_pagese);
+  m = create_descriptor(c, vaddr & PAGE_MASK, n_pages);
   if (IS_ERR(m)) {
     return m;
   }
@@ -186,7 +186,7 @@ struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsig
 
   err      = map_user_pages(m);
   if (err != 0) {
-    unmap_and_release(m);
+    unmap_and_release_map(m);
     return ERR_PTR(err);
   }
 

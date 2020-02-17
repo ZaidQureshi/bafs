@@ -30,7 +30,7 @@ struct map {
 struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsigned long n_pages);
 
 
-void unmape_and_release(struct map* map);
+void unmap_and_release_map(struct map* map);
 
 
 /*

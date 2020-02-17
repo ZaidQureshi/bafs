@@ -25,13 +25,16 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   c->cls = cls;
   c->chrdev = NULL;
 
-  snprintf(c->name, sizeof(c->name), "%s%d\0", KBUILD_MODNAME, c->number);
+  snprintf(c->name, sizeof(c->name), "%s%d", KBUILD_MODNAME, c->number);
+  c->name[sizeof(c->name) - 1] = '\0';
+
+  printk(KERN_CRIT "[ctrl_get] david for you: %s\n", c->name);
 
   return c;
 }
 
 void ctrl_put(struct ctrl* c) {
-  if (ctrl != NULL) {
+  if (c != NULL) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
     kfree(c);
@@ -39,11 +42,11 @@ void ctrl_put(struct ctrl* c) {
 }
 
 struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pdev) {
-  const struct list_node* e = list_next(&list->head);
+  const struct list_node* e = list_next(&l->head);
   struct ctrl* c;
 
   while (e != NULL) {
-    c = container_of(e, struct ctrl, l);
+    c = container_of(e, struct ctrl, list);
     if (c->pdev == pdev) {
       return c;
     }
@@ -56,12 +59,12 @@ struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pd
 
 
 struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
-  const struct list_node* e = list_next(&list->head);
+  const struct list_node* e = list_next(&l->head);
   struct ctrl* c;
 
   while (e != NULL) {
-    c = container_of(e, struct ctrl, l);
-    if (c->cdev == ind->i_cdev) {
+    c = container_of(e, struct ctrl, list);
+    if (&c->cdev == ind->i_cdev) {
       return c;
     }
     e = list_next(e);
@@ -92,7 +95,7 @@ long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operation
 
   chrdev = device_create(c->cls, NULL, c->rdev, NULL, c->name);
   if(IS_ERR(chrdev)) {
-    cdev_devl(&c->cdev);
+    cdev_del(&c->cdev);
     printk(KERN_ERR "[ctrl_chrdev_create] Failed to create character device\n");
     return PTR_ERR(chrdev);
 
@@ -101,7 +104,7 @@ long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operation
 
   c->chrdev = chrdev;
 
-  prink(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s created (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
+  printk(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s created (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
 
   return 0;
 }
@@ -109,10 +112,10 @@ long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operation
 void ctrl_chrdev_remove(struct ctrl* c) {
 
   if (c->chrdev != NULL) {
-    device_destrpy(c->cls, c->rdev);
+    device_destroy(c->cls, c->rdev);
     cdev_del(&c->cdev);
     c->chrdev = NULL;
 
-    prink(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s removed (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
+    printk(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s removed (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
   }
 }

@@ -49,3 +49,11 @@ flycheck_*.el
 
 build
 build/*
+
+*ko
+*o
+*cmd
+*.mod.c
+*tmp*
+*symvers
+*order
