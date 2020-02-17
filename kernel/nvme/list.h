@@ -27,7 +27,7 @@ static void list_node_init(struct list_node* e) {
 }
 
 
-static struct list_node* list_next(struct list_node* e) {
+static struct list_node* list_next(const struct list_node* e) {
   if ((e->next) != (&e->list->head))
     return e->next;
   else

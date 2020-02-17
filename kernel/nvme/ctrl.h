@@ -27,7 +27,7 @@ struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pd
 
 struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind);
 
-long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops);
+int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops);
 
 
 void ctrl_chrdev_remove(struct ctrl* c);

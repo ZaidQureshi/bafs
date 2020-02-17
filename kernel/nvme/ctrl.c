@@ -28,7 +28,8 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   snprintf(c->name, sizeof(c->name), "%s%d", KBUILD_MODNAME, c->number);
   c->name[sizeof(c->name) - 1] = '\0';
 
-  printk(KERN_CRIT "[ctrl_get] david for you: %s\n", c->name);
+
+  list_insert(l, &c->list);
 
   return c;
 }
@@ -75,8 +76,8 @@ struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
 }
 
 
-long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops) {
-  long err;
+int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops) {
+  int err;
   struct device* chrdev = NULL;
 
   if (c->chrdev != NULL) {
@@ -84,7 +85,7 @@ long ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operation
     return 0;
   }
 
-  c->rdev - MKDEV(MAJOR(first), MINOR(first) + c->number);
+  c->rdev = MKDEV(MAJOR(first), MINOR(first) + c->number);
 
   cdev_init(&c->cdev, fops);
   err = cdev_add(&c->cdev, c->rdev, 1);
