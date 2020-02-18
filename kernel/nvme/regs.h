@@ -36,7 +36,7 @@ struct nvme_regs {
   u32 CMBSZ;
   u32 BPINFO;
   u32 BPRSEL;
-  u32 BPMBL;
+  u64 BPMBL;
   u64 CMBMSC;
   u32 CMBSTS;
   u32 RES2[RES2_SIZE/sizeof(u32)];
