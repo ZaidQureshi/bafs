@@ -2,11 +2,11 @@
 #define __BAFS_NVME_REGS_H_
 
 
-
+/*One can use this to do register read operation*/
 #define _REG(p, offs, bits)                     \
     ((volatile uint##bits##_t *) (((volatile unsigned char*) ((volatile void*) (p))) + (offs)))
 
-
+/*Reserved space calculation*/
 #define RES1_START 0x18
 #define RES1_END   0x1b
 #define RES1_SIZE  (RES1_END - RES1_START + 1)
@@ -19,7 +19,13 @@
 #define RES3_END   0xfff
 #define RES3_SIZE (RES3_END - RES3_START + 1)
 
-
+/* Refer section 3.1 in rev1.4 June 2019 NVMe spec
+*  Total register space is 4KB. 
+*  Contents here doesnt capture the SQ and CQ registers 
+*  as these values are dynamic and cannot be read using static assignments. 
+*  Only the starting offset of the SQ Doorbel is available here. 
+*  Later will use this to point to the respective CQ and SQ entries. 
+*/
 struct nvme_regs {
   u64 CAP;
   u32 VS;
