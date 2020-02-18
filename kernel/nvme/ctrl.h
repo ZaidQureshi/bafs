@@ -10,20 +10,21 @@
 #include <linux/device.h>
 
 struct ctrl {
-  struct list_node list;
-  struct pci_dev* pdev;
-  char name[64];
-  int number;
-  dev_t rdev;
-  struct class* cls;
-  struct cdev cdev;
-  struct device* chrdev;
-  volatile u8* reg_addr;
-  u64 reg_len;
+  struct list_node           list;
+  struct pci_dev*            pdev;
+  char                       name[64];
+  int                        number;
+  dev_t                      rdev;
+  struct class*              cls;
+  struct cdev                cdev;
+  struct device*             chrdev;
+  volatile u8*               reg_addr;
+  u64                        reg_len;
   volatile struct nvme_regs* regs;
-  struct admin_queue_pair* aqp;
-  u32 dstrd;
-  u32 page_size;
+  struct admin_queue_pair*   aqp;
+  u32                        dstrd;
+  u32                        page_size;
+  u32                        timeout;
 
 };
 

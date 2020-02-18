@@ -56,6 +56,7 @@ void ctrl_put(struct ctrl* c) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
     admin_clean(c->aqp);
+    kfree(c->aqp);
     kfree(c);
   }
 }

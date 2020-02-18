@@ -7,9 +7,9 @@
     ((volatile uint##bits##_t *) (((volatile unsigned char*) ((volatile void*) (p))) + (offs)))
 
 
-#define RES1_START 0x1b
-#define RES1_END   0x18
-#define RES1_SIZE  (RES2_END - RES2_START + 1)
+#define RES1_START 0x18
+#define RES1_END   0x1b
+#define RES1_SIZE  (RES1_END - RES1_START + 1)
 
 #define RES2_START 0x5c
 #define RES2_END   0xdff

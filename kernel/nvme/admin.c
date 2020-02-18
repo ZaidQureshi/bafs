@@ -14,6 +14,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   u32 cqes;
   u32 sqes;
   u32 ps;
+  u32 mpsmax;
 
   aqp->sq.es = sizeof(struct cmd);
 
@@ -24,24 +25,36 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq.qs = queue_size;
   aqp->cq.qs = queue_size;
 
-  cqes = ilog2(aqp->cq.es);
-  sqes = ilog2(aqp->sq.es);
-  ps   = ilog2(c->page_size);
+
+
 
   aqp->c = c;
   spin_lock_init(&aqp->lock);
 
-  aqp->cq.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * sizeof(struct cpl),
-                                     &aqp->cq_dma_addr, GFP_KERNEL);
-  aqp->sq.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * sizeof(struct cmd),
+  aqp->cq.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->cq.es,
+                                    &aqp->cq_dma_addr, GFP_KERNEL);
+  aqp->sq.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->sq.es,
                                     &aqp->sq_dma_addr, GFP_KERNEL);
 
 
 
   aqp->sq.db = &c->regs->SQ0TDBL;
 
-  c->dstrd     = ((volatile u32*)(&c->regs->CAP))[1];
-  c->page_size = 1 << (12 + (((volatile u32*)(((volatile u8*)(&c->regs->CAP))+52))[0]));
+  c->dstrd = ((volatile u32*)(&c->regs->CAP))[1];
+  mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
+
+  c->timeout = (c->regs->CAP & 0x000000000fffffff) >> 24;
+
+  c->page_size = 1 << (12 + mpsmax);
+
+
+  cqes = ilog2(aqp->cq.es);
+  sqes = ilog2(aqp->sq.es);
+  ps   = ilog2(c->page_size);
+
+  printk(KERN_INFO "cqes: %llu\tcq.es: %llu\tsqes: %llu\tsq.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\n",
+         (unsigned long long) cqes, (unsigned long long) aqp->cq.es, (unsigned long long) sqes, (unsigned long long) aqp->sq.es,
+         (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout);
 
   aqp->sq.db = (volatile u32*)(((volatile u8*)aqp->sq.db) + (1 * (4 << c->dstrd)));
 
@@ -52,19 +65,29 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
 
   *cc = *cc & ~1;
+  barrier();
 
-  while ((csts[0] & 0x01) != 0);
+  while ((csts[0] & 0x01) != 0) {
+    barrier();
+  }
 
+  printk(KERN_INFO "[admin_init] Finished first loop\n");
   c->regs->AQA = ((queue_size-1) << 16) | (queue_size-1);
 
   c->regs->ACQ = aqp->cq_dma_addr;
 
   c->regs->ASQ = aqp->sq_dma_addr;
 
-  *cc =  (cqes << 20) | (sqes << 16)| (ps << 7)| 0x0001;
+  *cc = (cqes << 20) | (sqes << 16)| (mpsmax << 7)| 0x0001;
 
+  barrier();
 
-  while ((csts[0] & 0x01) != 1);
+  while ((csts[0] & 0x01) != 1) {
+    barrier();
+  }
+  
+
+  printk(KERN_INFO "[admin_init] finished second loop\n");
   
 }
 
