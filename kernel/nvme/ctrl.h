@@ -3,6 +3,7 @@
 
 #include "list.h"
 #include "regs.h"
+#include "admin.h"
 #include <linux/pci.h>
 #include <linux/cdev.h>
 #include <linux/fs.h>
@@ -20,6 +21,9 @@ struct ctrl {
   volatile u8* reg_addr;
   u64 reg_len;
   volatile struct nvme_regs* regs;
+  struct admin_queue_pair* aqp;
+  u32 dstrd;
+  u32 page_size;
 
 };
 

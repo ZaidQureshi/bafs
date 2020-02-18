@@ -16,7 +16,7 @@ TARGET_MODULE:=bafs_nvme
 EXTRA_CFLAGS := -I$(topdir)/include $(XVC_FLAGS)
 
 ifneq ($(KERNELRELEASE),)
-	$(TARGET_MODULE)-objs := bafs_nvme_mod.o map.o ctrl.o list.o
+	$(TARGET_MODULE)-objs := bafs_nvme_mod.o map.o ctrl.o list.o admin.o
 	obj-m := $(TARGET_MODULE).o
 else
 	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build

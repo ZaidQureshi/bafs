@@ -1,5 +1,6 @@
 #include "ctrl.h"
 #include "list.h"
+#include "admin.h"
 
 #include <linux/kernel.h>
 #include <linux/types.h>
@@ -30,6 +31,21 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   c->name[sizeof(c->name) - 1] = '\0';
 
 
+
+
+  c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0));
+  c->reg_len = pci_resource_len(c->pdev, 0);
+  c->regs = (volatile struct nvme_regs*)c->reg_addr;
+
+  c->aqp = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
+  if (c->aqp == NULL) {
+    printk(KERN_ERR "[ctrl_get] Failed to alocated admin queue\n");
+    return ERR_PTR(-ENOMEM);
+
+  }
+
+  admin_init(c->aqp, c);
+
   list_insert(l, &c->list);
 
   return c;
@@ -39,6 +55,7 @@ void ctrl_put(struct ctrl* c) {
   if (c != NULL) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
+    admin_clean(c->aqp);
     kfree(c);
   }
 }
@@ -88,6 +105,7 @@ int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations
 
   c->rdev = MKDEV(MAJOR(first), MINOR(first) + c->number);
 
+
   cdev_init(&c->cdev, fops);
   err = cdev_add(&c->cdev, c->rdev, 1);
   if (err != 0) {
@@ -106,9 +124,8 @@ int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations
 
   c->chrdev = chrdev;
 
-  c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0));
-  c->reg_len = pci_resource_len(c->pdev, 0);
-  c->regs = (volatile struct nvme_regs*)c->reg_addr;
+
+
 
 
   printk(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s created (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
