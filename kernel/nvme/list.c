@@ -13,6 +13,8 @@ void list_init(struct list* l) {
   spin_lock_init(&l->lock);
 }
 
+
+/*insert always at the head?*/
 void list_insert(struct list* l, struct list_node* e) {
   struct list_node* last = NULL;
 
@@ -30,12 +32,13 @@ void list_insert(struct list* l, struct list_node* e) {
 }
 
 void list_remove(struct list_node* e) {
-  if (likely((e != NULL) && (e->list != NULL) && (e != &e->list->head))) {
+  /*likely() call provides a hint to do speculative execution that it has high chance of being true*/
+  if (likely((e != NULL) && (e->list != NULL) && (e != &e->list->head))) { //TODO: is the last part essentially checking for empty list?
     spin_lock(&e->list->lock);
 
     e->prev->next = e->next;
     e->next->prev = e->prev;
-    barrier();
+    barrier(); // barrier provides needed ordering constraints. But do we really need it? doesnt spin_lock already have one?
     spin_unlock(&e->list->lock);
 
     e->list = NULL;

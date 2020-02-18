@@ -5,28 +5,31 @@
 #include <linux/spinlock.h>
 #include <linux/compiler.h>
 
-
+/*making compiler happy - forward declaration*/
 struct list;
 
+/*double ptr list*/
 struct list_node {
-  struct list*      list;
-  struct list_node* next;
-  struct list_node* prev;
+  struct list*      list;  // ref to the list
+  struct list_node* next;  // ptr to next element in the list
+  struct list_node *prev;  // ptr to previous element in the list
 };
 
+
+/*Double linked list and expect the head is always empty*/
 struct list {
-  struct list_node head;
-  spinlock_t       lock;
+  struct list_node head;    // start of list
+  spinlock_t       lock;    // exclusive access purpose
 };
 
-
+/*the list_node is init to NULL*/
 static void list_node_init(struct list_node* e) {
   e->list = NULL;
   e->next = NULL;
   e->prev = NULL;
 }
 
-
+/*get next element if list is not empty*/
 static struct list_node* list_next(const struct list_node* e) {
   if ((e->next) != (&e->list->head))
     return e->next;
@@ -34,6 +37,7 @@ static struct list_node* list_next(const struct list_node* e) {
     return NULL;
 }
 
+/*Func calls for init, insert and removal from the list*/
 
 void list_init(struct list* l);
 
@@ -41,5 +45,4 @@ void list_insert(struct list* l, struct list_node* e);
 
 void list_remove(struct list_node* e);
 
-
-#endif
+#endif /*__BAFS_NVME_LIST_H__*/

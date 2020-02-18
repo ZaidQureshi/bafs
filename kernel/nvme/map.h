@@ -12,24 +12,23 @@ struct map;
 
 typedef void (*release)(struct map*);
 
-
+/* Describes mapped memory address range*/
 struct map {
-  struct list_node    list;
-  struct task_struct* owner;
-  u64                 vaddr;
-  struct pci_dev*     pdev;
-  unsigned long       page_size;
-  release             release;
-  unsigned long       n_addrs;
-  u64                 addrs[1];
-  void*               data;
-
+  struct list_node    list;     // header
+  struct task_struct* owner;    // mapping owner
+  u64                 vaddr;    // start virtual addr
+  struct pci_dev*     pdev;     // ptr to physical PCIe device
+  unsigned long       page_size;// page size 
+  release             release;  // releasing mapping callback
+  unsigned long       n_addrs;  // # of mapped pages
+  u64                 addrs[1]; // bus address
+  void*               data;     // custom data
 };
 
-
+/* map the userspace pages for the DMA*/
 struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsigned long n_pages);
 
-
+/*unmap and release the memory*/
 void unmap_and_release_map(struct map* map);
 
 
@@ -41,6 +40,7 @@ struct map* map_cuda_device_memory(struct list* l, const struct ctrl* ctrl, u64 
 #endif
 */
 
+/* search for mapping from vaddr to current task*/
 struct map* map_find(const struct list* l, u64 vaddr);
 
-#endif
+#endif /*__BAFS_NVME_MAP_H__*/

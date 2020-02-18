@@ -26,13 +26,14 @@ struct gpu_region
 #endif
 */
 
+/*GPU Page size is 64KB assumed*/
 #define GPU_PAGE_SHIFT 16
 #define GPU_PAGE_SIZE  (1UL << GPU_PAGE_SHIFT)
 #define GPU_PAGE_MASK  ~(GPU_PAGE_SIZE - 1)
 
 static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigned long n_pages) {
   unsigned long i;
-  struct map*   m = NULL;
+  struct map* m = NULL;
 
 
   printk(KERN_WARNING "[create_descriptor] n_pages = %lu", n_pages);
