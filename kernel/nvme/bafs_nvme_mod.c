@@ -1,6 +1,7 @@
 #include "list.h"
 #include "ctrl.h"
 #include "map.h"
+#include "regs.h"
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/kernel.h>
@@ -82,6 +83,8 @@ static const struct file_operations dev_fops =
    .mmap  = mmap_regs,
   };
 
+#define _REG(p, offs, bits) \
+    ((volatile uint##bits##_t *) (((volatile unsigned char*) ((volatile void*) (p))) + (offs)))
 
 static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     long err;
@@ -126,6 +129,9 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     pci_set_master(pdev);
 
     curr_ctrls++;
+
+    print_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, c->reg_addr, 4*16, false);
+    printk(KERN_INFO "[add_pci_dev]\tAddr: %lx\tCAP1: %lx\tCAP2: %lx\n", c->reg_addr, c->regs->CAP, c->regs->CC);
     return 0;
 }
 

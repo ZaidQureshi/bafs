@@ -2,6 +2,7 @@
 #define __BAFS_NVME_CTRL_H__
 
 #include "list.h"
+#include "regs.h"
 #include <linux/pci.h>
 #include <linux/cdev.h>
 #include <linux/fs.h>
@@ -16,6 +17,9 @@ struct ctrl {
   struct class* cls;
   struct cdev cdev;
   struct device* chrdev;
+  volatile u8* reg_addr;
+  u64 reg_len;
+  volatile struct nvme_regs* regs;
 
 };
 
