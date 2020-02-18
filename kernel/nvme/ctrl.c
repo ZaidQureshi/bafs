@@ -5,6 +5,7 @@
 #include <linux/types.h>
 #include <linux/fs.h>
 #include <linux/device.h>
+#include <linux/pci.h>
 #include <linux/slab.h>
 #include <asm/errno.h>
 
@@ -104,6 +105,11 @@ int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations
 
 
   c->chrdev = chrdev;
+
+  c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0));
+  c->reg_len = pci_resource_len(c->pdev, 0);
+  c->regs = (volatile struct nvme_regs*)c->reg_addr;
+
 
   printk(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s created (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
 
