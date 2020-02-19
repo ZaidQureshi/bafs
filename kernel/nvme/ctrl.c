@@ -21,27 +21,24 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
 
   list_node_init(&c->list);
 
-  c->pdev = pdev;
+  c->pdev   = pdev;
   c->number = number;
-  c->rdev = 0;
-  c->cls = cls;
+  c->rdev   = 0;
+  c->cls    = cls;
   c->chrdev = NULL;
 
   snprintf(c->name, sizeof(c->name), "%s%d", KBUILD_MODNAME, c->number);
   c->name[sizeof(c->name) - 1] = '\0';
 
-
-
-
+  /*Read the register values of the controller using PCI-IOMAP function*/
   c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0));
-  c->reg_len = pci_resource_len(c->pdev, 0);
-  c->regs = (volatile struct nvme_regs*)c->reg_addr;
+  c->reg_len  = pci_resource_len(c->pdev, 0);
+  c->regs     = (volatile struct nvme_regs*)c->reg_addr;
 
-  c->aqp = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
+  c->aqp      = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
   if (c->aqp == NULL) {
     printk(KERN_ERR "[ctrl_get] Failed to alocated admin queue\n");
     return ERR_PTR(-ENOMEM);
-
   }
 
   admin_init(c->aqp, c);
