@@ -10,6 +10,13 @@
 #include <linux/slab.h>
 #include <asm/errno.h>
 
+/* ctrl_get creates a controller reference in the kernel space. 
+*  PCIe device specific paramters are loaded to the controller struct.
+*  We also perform the admin queue pair allocation in the controller
+*  and initial it. 
+*/
+
+
 struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, int number) {
   struct ctrl* c = NULL;
 
@@ -48,6 +55,12 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   return c;
 }
 
+
+/*
+*  When you release the ctrl from the kernel, we need to remove all the datastruct that
+*  we have used, reset the admin queues and remove the pcie device from the kernel space. 
+*/
+
 void ctrl_put(struct ctrl* c) {
   if (c != NULL) {
     list_remove(&c->list);
@@ -57,6 +70,13 @@ void ctrl_put(struct ctrl* c) {
     kfree(c);
   }
 }
+
+/*
+* Using the member function pdev inside the list, we try finding 
+* the address of the ctrl of the pci device usin the below function. 
+* To know more about how container_of works visit here:
+* https://embetronicx.com/tutorials/linux/c-programming/understanding-of-container_of-macro-in-linux-kernel/
+*/
 
 struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pdev) {
   const struct list_node* e = list_next(&l->head);
@@ -74,6 +94,12 @@ struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pd
   return NULL;
 }
 
+/*
+* Using the member function inode inside the list, we try finding 
+* the address of the ctrl of the pci device usin the below function. 
+* To know more about how container_of works visit here:
+* https://embetronicx.com/tutorials/linux/c-programming/understanding-of-container_of-macro-in-linux-kernel/
+*/
 
 struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
   const struct list_node* e = list_next(&l->head);
@@ -91,6 +117,13 @@ struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
   return NULL;
 }
 
+/* In our world, we want system calls go directly to the device drivers. We dont want to 
+* involve file system mechanisms to interact with the NVMe device. This is primarily to reduce the 
+* overhead. Thus we map the NVMe device as a chrdev using chrdev create function call which returns 0
+* if it successfully created the deviced and setup the filoe operations such as read, write, seek, open, flush, release and llseek
+* One the creation is successful, we should be able to see them in the /dev/ location. 
+* As it is aparent, we need a method to remove the char device and that is done using - ctrl_chrdev_remove
+*/
 
 int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops) {
   int err;
@@ -121,10 +154,6 @@ int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations
 
 
   c->chrdev = chrdev;
-
-
-
-
 
   printk(KERN_INFO "[ctrl_chrdev_create] Character device /dev/%s created (%d.%d)\n", c->name, MAJOR(c->rdev), MINOR(c->rdev));
 
