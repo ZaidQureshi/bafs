@@ -24,39 +24,40 @@ MODULE_DESCRIPTION("BAFS NVMe driver");
 MODULE_VERSION("0.1");
 
 #define DRIVER_NAME         "bafs_nvme"
-#define PCI_CLASS_NVME      0x010802
+#define PCI_CLASS_NVME      0x010802 /*Defines this is a NVME Device with PCIID: https://pci-ids.ucw.cz/read/PD/01/08/02*/
 #define PCI_CLASS_NVME_MASK 0xffffff
 
-
-
+/*Filter for the device*/
 static const struct pci_device_id id_table[] =
   {
    { PCI_DEVICE_CLASS(PCI_CLASS_NVME, PCI_CLASS_NVME_MASK) },
    { 0 }
   };
 
+/*First character device*/
 static dev_t dev_first;
 
-
+/*device class*/
 static struct class* dev_class;
 
-
+/*List of Controller devices*/
 static struct list ctrl_list;
 
-
+/*list of host mapped devices*/
 static struct list host_list;
 
 /*
 static struct list cuda_list;
 */
 
-static int num_ctrls = 8;
+/*How many NVMe SSD we plan on supporting.*/
+static int num_ctrls = 8; 
 module_param(num_ctrls, int, 0);
 MODULE_PARM_DESC(num_ctrls, "Number of controller devices");
 
 static int curr_ctrls = 0;
 
-
+/*mmaps the controller registers and returns 0 if successful mapping of regs occured to the userspace*/
 static int mmap_regs(struct file* f, struct vm_area_struct* vma) {
   struct ctrl* c = NULL;
 
@@ -76,13 +77,15 @@ static int mmap_regs(struct file* f, struct vm_area_struct* vma) {
 
 }
 
-
+/*Types of file operations supported for device file*/
 static const struct file_operations dev_fops =
   {
    .owner = THIS_MODULE,
    .mmap  = mmap_regs,
   };
 
+
+/*Add the PCie device to the kernel*/
 static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     long err;
     struct ctrl* c = NULL;
@@ -95,11 +98,15 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     printk(KERN_INFO "[add_pci_dev] Adding controller device: %02x:%02x.%1x",
            pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
 
+    /*Generate a controller reference in kernel space*/
     c = ctrl_get(&ctrl_list, dev_class, pdev, curr_ctrls);
     if (IS_ERR(c)) {
       return PTR_ERR(c);
     }
 
+    /*Create reference to device memory. Read https://www.kernel.org/doc/Documentation/DMA-API-HOWTO.txt Only the diagram is useful. 
+    * If failed, then revoke the controller reference using ctrl_put()
+    * */
     err = pci_request_region(pdev, 0, DRIVER_NAME);
     if (err != 0) {
       ctrl_put(c);
@@ -107,6 +114,7 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return err;
     }
 
+    /*Enable the PCIe device.  Ask low-level code to enable I/O and memory. Wake up the device if it was suspended*/
     err = pci_enable_device(pdev);
     if (err < 0) {
       pci_release_region(pdev, 0);
@@ -115,6 +123,7 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return err;
     }
 
+    /*Creates the device file for access. Also note, when it fails, we need to clean up all the previous steps one after other*/
     err = ctrl_chrdev_create(c, dev_first, &dev_fops);
     if (err != 0) {
       pci_disable_device(pdev);
@@ -123,6 +132,7 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return err;
     }
 
+    /*Requests the bus to become master of DMA and enables it*/
     pci_set_master(pdev);
 
     curr_ctrls++;
@@ -132,6 +142,10 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     return 0;
 }
 
+
+/*Removal of PCI device involves finding the mapping address of the controller and 
+* clearing all the data structs that are associated with it and finally disabling the device from access.
+*/
 static void remove_pci_dev(struct pci_dev* pdev) {
   struct ctrl* c = NULL;
   if (pdev == NULL) {
@@ -187,12 +201,15 @@ static int __init bafs_nvme_init(void) {
   list_init(&cuda_list);
   */
 
+  /*Allocates a range of char device numbers. 
+  * The major number will be chosen dynamically, and returned (along with the first minor number) in dev.*/
   err = alloc_chrdev_region(&dev_first, 0, num_ctrls, DRIVER_NAME);
   if (err < 0) {
     printk(KERN_CRIT "[bafs_nvme_init] Failed to allocated char device region\n");
     return err;
   }
 
+  /*Creates the char device*/
   dev_class = class_create(THIS_MODULE, DRIVER_NAME);
   if(IS_ERR(dev_class)) {
     unregister_chrdev_region(dev_first, num_ctrls);
@@ -201,6 +218,9 @@ static int __init bafs_nvme_init(void) {
 
   }
 
+  /*Adds the driver structure to the list of registered drivers. 
+  * Returns a negative value on error, otherwise 0. 
+  * If no error occurred, the driver remains registered even if no device was claimed during registration.*/
   err = pci_register_driver(&driver);
   if(err != 0) {
     class_destroy(dev_class);
