@@ -70,7 +70,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   sqes = ilog2(aqp->sq.q.es);
   ps   = ilog2(c->page_size);
 
-  printk(KERN_INFO "cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\tcq_dma_addr: %p\tsq_dma_addr: %p\n",
+  printk(KERN_INFO "cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\tcq_dma_addr: %llx\tsq_dma_addr: %llx\n",
          (unsigned long long) cqes, (unsigned long long) aqp->cq.q.es, (unsigned long long) sqes, (unsigned long long) aqp->sq.q.es,
          (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout, aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
 
