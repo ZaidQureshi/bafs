@@ -25,6 +25,9 @@ struct ctrl {
   u32                        dstrd;
   u32                        page_size;
   u32                        timeout;
+  struct list                sq_list;
+  struct list                cq_list;
+
 
 };
 

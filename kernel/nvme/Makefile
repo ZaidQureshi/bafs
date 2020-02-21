@@ -13,7 +13,7 @@ topdir := $(shell cd $(src)/.. && pwd)
 
 TARGET_MODULE:=bafs_nvme
 
-EXTRA_CFLAGS := -I$(topdir)/include $(XVC_FLAGS)
+EXTRA_CFLAGS := -I$(topdir)/include $(XVC_FLAGS) -DKERN
 
 ifneq ($(KERNELRELEASE),)
 	$(TARGET_MODULE)-objs := bafs_nvme_mod.o map.o ctrl.o list.o admin.o

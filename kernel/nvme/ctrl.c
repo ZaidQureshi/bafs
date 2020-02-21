@@ -21,10 +21,10 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
 
   list_node_init(&c->list);
 
-  c->pdev = pdev;
+  c->pdev   = pdev;
   c->number = number;
-  c->rdev = 0;
-  c->cls = cls;
+  c->rdev   = 0;
+  c->cls    = cls;
   c->chrdev = NULL;
 
   snprintf(c->name, sizeof(c->name), "%s%d", KBUILD_MODNAME, c->number);
@@ -34,10 +34,10 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
 
 
   c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0));
-  c->reg_len = pci_resource_len(c->pdev, 0);
+  c->reg_len  = pci_resource_len(c->pdev, 0);
   c->regs = (volatile struct nvme_regs*)c->reg_addr;
 
-  c->aqp = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
+  c->aqp      = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
   if (c->aqp == NULL) {
     printk(KERN_ERR "[ctrl_get] Failed to alocated admin queue\n");
     return ERR_PTR(-ENOMEM);
@@ -63,10 +63,10 @@ void ctrl_put(struct ctrl* c) {
 
 struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pdev) {
   const struct list_node* e = list_next(&l->head);
-  struct ctrl* c;
+  struct ctrl*            c;
 
-  while (e != NULL) {
-    c = container_of(e, struct ctrl, list);
+  while (e      != NULL) {
+    c            = container_of(e, struct ctrl, list);
     if (c->pdev == pdev) {
       return c;
     }
@@ -80,9 +80,9 @@ struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pd
 
 struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
   const struct list_node* e = list_next(&l->head);
-  struct ctrl* c;
+  struct ctrl*            c;
 
-  while (e != NULL) {
+  while (e       != NULL) {
     c = container_of(e, struct ctrl, list);
     if (&c->cdev == ind->i_cdev) {
       return c;
@@ -96,7 +96,7 @@ struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
 
 
 int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops) {
-  int err;
+  int            err;
   struct device* chrdev = NULL;
 
   if (c->chrdev != NULL) {
