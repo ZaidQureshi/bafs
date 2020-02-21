@@ -1,19 +1,8 @@
 SHELL = /bin/bash
-ifneq ($(xvc_bar_num),)
-	XVC_FLAGS += -D__XVC_BAR_NUM__=$(xvc_bar_num)
-endif
-
-ifneq ($(xvc_bar_offset),)
-	XVC_FLAGS += -D__XVC_BAR_OFFSET__=$(xvc_bar_offset)
-endif
-
-$(warning XVC_FLAGS: $(XVC_FLAGS).)
-
-topdir := $(shell cd $(src)/.. && pwd)
 
 TARGET_MODULE:=bafs_nvme
 
-EXTRA_CFLAGS := -I$(topdir)/include $(XVC_FLAGS) -DKERN
+EXTRA_CFLAGS := -DKERN
 
 ifneq ($(KERNELRELEASE),)
 	$(TARGET_MODULE)-objs := bafs_nvme_mod.o map.o ctrl.o list.o admin.o
