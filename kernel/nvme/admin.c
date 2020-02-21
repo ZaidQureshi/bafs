@@ -39,9 +39,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   spin_lock_init(&aqp->lock);
 
   aqp->cq.q.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->cq.q.es,
-                                    &aqp->cq.q_dma_addr, GFP_KERNEL);
+                                    &aqp->cq.q_dma_addr, GFP_KERNEL | GFP_NOWAIT));
   aqp->sq.q.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->sq.q.es,
-                                    &aqp->sq.q_dma_addr, GFP_KERNEL);
+                                    &aqp->sq.q_dma_addr, GFP_KERNEL | GFP_NOWAIT));
 
   aqp->cq.q.mark = kmalloc(queue_size, GFP_KERNEL);
   aqp->sq.q.mark = kmalloc(queue_size, GFP_KERNEL);
@@ -112,8 +112,10 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   printk(KERN_INFO "[admin_init] finished second loop\n");
 
   admin_dev_self_test(aqp);
-/*
+  msleep(20000);
+
   admin_dev_self_test(aqp);
+/*
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
