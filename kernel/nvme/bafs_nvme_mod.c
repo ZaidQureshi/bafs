@@ -151,7 +151,7 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return 0;
     }
 
-    pci_free_irq_vectors(pdev);
+    //pci_free_irq_vectors(pdev);
     
 
     printk(KERN_INFO "[add_pci_dev] Adding controller device: %02x:%02x.%1x",
@@ -189,8 +189,8 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
 
     curr_ctrls++;
 
-    //print_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, c->reg_addr, 4*16, false);
-    //printk(KERN_INFO "[add_pci_dev]\tAddr: %p\tCAP: %llx\tCC: %x\n", c->reg_addr, c->regs->CAP, c->regs->CC);
+    //int_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, c->reg_addr, 4*16, false);
+    printk(KERN_INFO "[add_pci_dev]\tAddr: %p\tCAP: %llx\tCC: %x\n", c->reg_addr, c->regs->CAP, c->regs->CC);
     return 0;
 }
 

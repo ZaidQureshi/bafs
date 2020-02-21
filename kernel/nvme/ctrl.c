@@ -44,7 +44,7 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
 
   }
 
-  admin_init(c->aqp, c);
+  //admin_init(c->aqp, c);
 
   list_insert(l, &c->list);
 
@@ -55,7 +55,7 @@ void ctrl_put(struct ctrl* c) {
   if (c != NULL) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
-    admin_clean(c->aqp);
+    //admin_clean(c->aqp);
     kfree(c->aqp);
     kfree(c);
   }
