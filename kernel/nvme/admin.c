@@ -306,7 +306,7 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
   admin_sq_mark_cleanup(aqp, ret1);
   admin_cq_mark_cleanup(aqp, ret2);
 }
-void admin_cq_create(struct admin_queue_pair* aqp) {
+void admin_create_cq(struct admin_queue_pair* aqp) {
   spin_lock(&aqp->lock);
 
 
