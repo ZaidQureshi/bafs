@@ -85,6 +85,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   barrier();
 
   while ((csts[0] & 0x01) != 0) {
+
     barrier();
   }
 
@@ -108,9 +109,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   
 
   printk(KERN_INFO "[admin_init] finished second loop\n");
-
+/*
   admin_dev_self_test(aqp);
-  /*
+
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
