@@ -7,6 +7,8 @@
 #include <linux/spinlock.h>
 
 
+#define MAX_CMD 65536
+
 struct admin_queue_pair {
   struct queue_k cq;
   struct queue_k sq;

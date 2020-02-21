@@ -3,19 +3,20 @@
 #include <linux/log2.h>
 
 void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
+ 
+//Create pointers to Controller configuration and controller status registers
+  volatile u32* cc    = &c->regs->CC;
+  volatile u32* csts  = &c->regs->CSTS;
 
-
-
-  volatile u32* cc = &c->regs->CC;
-
-  volatile u32* csts = &c->regs->CSTS;
-
+//Read the maximum individual IO queue size supported by the controller. +1 is added for easier check
   u32 queue_size = ((volatile u16*)(&c->regs->CAP))[0] + 1;
+
   u32 cqes;
   u32 sqes;
   u32 ps;
   u32 mpsmax;
 
+//initialize admin sq and cq data structs
   aqp->sq.q.head = 0;
   aqp->cq.q.head = 0;
 
@@ -28,6 +29,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
   aqp->sq.q.no = 0;
   aqp->cq.q.no = 0;
+
+  //TODO: To make change - queue_size can be larger than 4K but admin queue cannot be more than 4K. 
+  // also queue_size should only be used for IO queues and not for admin queues. 
   aqp->sq.q.qs = queue_size;
   aqp->cq.q.qs = queue_size;
 
@@ -45,10 +49,10 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->cq.q.mark = kmalloc(queue_size, GFP_KERNEL);
   aqp->sq.q.mark = kmalloc(queue_size, GFP_KERNEL);
 
-  aqp->sq.q.cid = kmalloc(65536, GFP_KERNEL);
+  aqp->sq.q.cid = kmalloc(MAX_CMD, GFP_KERNEL);
   memset(aqp->cq.q.mark, 0, queue_size);
   memset(aqp->sq.q.mark, 0, queue_size);
-  memset(aqp->sq.q.cid, 0, 65536);
+  memset(aqp->sq.q.cid, 0, MAX_CMD);
 
   aqp->cq.q.phase = 1;
   aqp->sq.q.phase = 1;
@@ -132,7 +136,7 @@ s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
   u64 cid;
   u32 i;
 
-  cid = 65536;
+  cid = MAX_CMD;
   spin_lock(&aqp->lock);
 
   if (((u16) (aqp->sq.q.tail - aqp->sq.q.head) % aqp->sq.q.qs) == (aqp->sq.q.qs - 1)) {
@@ -143,7 +147,8 @@ s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
 
   loc = aqp->sq.q.tail;
 
-  for (i = 0; i < 65536; i++) {
+  for (i = 0; i < MAX_CMD; i++)
+  {
     if (aqp->sq.q.cid[i] == 0) {
       aqp->sq.q.cid[i] = 1;
       cid              = i;
@@ -151,7 +156,8 @@ s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
     }
   }
 
-  if (cid == 65536) {
+  if (cid == MAX_CMD)
+  {
     spin_unlock(&aqp->lock);
     return -1;
   }
