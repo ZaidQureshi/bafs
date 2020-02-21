@@ -16,7 +16,7 @@ struct admin_queue_pair {
 
 };
 
-
+/*Refer section 5 for details*/
 enum admin_cmd_opcode {
                        DEL_IO_SQ      = 0x0,
                        CRT_IO_SQ      = 0x1,
@@ -48,10 +48,19 @@ enum admin_cmd_opcode {
 
 };
 
+
+/* Manually creates an admin queue. Creation of admin queue will require resetting of controller
+*  the steps followed to reset controller with appropriate register definitions can be 
+*  read at section 7.6.1 of NVMe Spec rv1.4 June 2019. 
+*/
 void admin_init(struct admin_queue_pair* aqp, struct ctrl* c);
 
+
+/*This removes the admin queue specific data structs*/
 void admin_clean(struct admin_queue_pair* aqp);
 
+
+/*This is a self test opcode for the controller.*/
 void admin_dev_self_test(struct admin_queue_pair* aqp);
 
 #endif
