@@ -115,7 +115,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   msleep(20000);
 
   admin_dev_self_test(aqp);
-/*
+
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
