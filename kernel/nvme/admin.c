@@ -72,7 +72,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
   printk(KERN_INFO "cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\tcq_dma_addr: %p\tsq_dma_addr: %p\n",
          (unsigned long long) cqes, (unsigned long long) aqp->cq.q.es, (unsigned long long) sqes, (unsigned long long) aqp->sq.q.es,
-         (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout, aqp->cq.q.addr, aqp->sq.q.addr);
+         (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout, aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
 
   aqp->cq.q.db = (volatile u32*)(((volatile u8*)aqp->sq.q.db) + (1 * (4 << c->dstrd)));
 
