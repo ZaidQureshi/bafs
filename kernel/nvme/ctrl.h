@@ -29,6 +29,9 @@ struct ctrl {
   u32                        dstrd;     // CAP.DSTRD register value - dynamic. 
   u32                        page_size; // Page size of the device
   u32                        timeout;   // Time out value of the device.
+  struct list                sq_list;
+  struct list                cq_list;
+
 
 };
 

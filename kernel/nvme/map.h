@@ -23,6 +23,7 @@ struct map {
   unsigned long       n_addrs;  // # of mapped pages
   u64                 addrs[1]; // bus address
   void*               data;     // custom data
+
 };
 
 /* map the userspace pages for the DMA*/

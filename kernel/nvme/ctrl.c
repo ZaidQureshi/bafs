@@ -80,10 +80,10 @@ void ctrl_put(struct ctrl* c) {
 
 struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pdev) {
   const struct list_node* e = list_next(&l->head);
-  struct ctrl* c;
+  struct ctrl*            c;
 
-  while (e != NULL) {
-    c = container_of(e, struct ctrl, list);
+  while (e      != NULL) {
+    c            = container_of(e, struct ctrl, list);
     if (c->pdev == pdev) {
       return c;
     }
@@ -103,9 +103,9 @@ struct ctrl* ctrl_find_by_pci_dev(const struct list* l, const struct pci_dev* pd
 
 struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
   const struct list_node* e = list_next(&l->head);
-  struct ctrl* c;
+  struct ctrl*            c;
 
-  while (e != NULL) {
+  while (e       != NULL) {
     c = container_of(e, struct ctrl, list);
     if (&c->cdev == ind->i_cdev) {
       return c;
@@ -126,7 +126,7 @@ struct ctrl* ctrl_find_by_inode(const struct list* l, const struct inode* ind) {
 */
 
 int ctrl_chrdev_create(struct ctrl* c, dev_t first, const struct file_operations* fops) {
-  int err;
+  int            err;
   struct device* chrdev = NULL;
 
   if (c->chrdev != NULL) {
