@@ -108,8 +108,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   
 
   printk(KERN_INFO "[admin_init] finished second loop\n");
-/*
+
   admin_dev_self_test(aqp);
+  /*
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
@@ -298,8 +299,9 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
 
 
   ret2 = admin_cq_poll(aqp, cid);
-
+  i = 0;
   while (ret2 == -1) {
+    if ((i++%100) == 0)
     printk(KERN_INFO "[admin_dev_self_test] retry polling\n");
     ret2 = admin_cq_poll(aqp, cid);
   }
