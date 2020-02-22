@@ -5,18 +5,17 @@
 #include "../kernel/nvme/list.h"
 #endif
 
-//TODO: What is the queue struct here ? What is mark refer to? and why are we usin git for admin queues?
 struct queue {
-  uint16_t           no;
-  uint64_t           es;
-  uint32_t           qs;
-  uint64_t           head;
-  uint64_t           tail;
-  uint8_t            phase;
-  volatile uint32_t* db;
-  volatile void*     addr;
-  uint8_t*           mark;
-  uint8_t*           cid;
+  uint16_t           no;    // queue number
+  uint64_t           es;    // entry size is in bytes
+  uint32_t           qs;    // queue size in number of entries
+  uint64_t           head;  // head ptr
+  uint64_t           tail;  // tail ptr
+  uint8_t            phase; // phase bit - toggles 
+  volatile uint32_t* db;    // doorbell register
+  volatile void*     addr;  // addr of the queue
+  uint8_t*           mark;  // mark is a sentinal value used to garbage collection on queues. SQ and CQ both uses it. 
+  uint8_t*           cid;   // byte array - where every element represents availablity of the cid - 0 means available and 1 means taken. Only SQ uses. 
 
 
 } __attribute__((aligned(64)));

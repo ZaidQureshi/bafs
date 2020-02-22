@@ -11,6 +11,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
 //Read the maximum individual IO queue size supported by the controller. +1 is added for easier check
   u32 queue_size = ((volatile u16*)(&c->regs->CAP))[0] + 1;
+  queue_size     = queue_size > 4096 ? 4096: queue_size;
 
   u32 cqes;
   u32 sqes;
@@ -31,16 +32,14 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq.q.no = 0;
   aqp->cq.q.no = 0;
 
-  //TODO: To make change - queue_size can be larger than 4K but admin queue cannot be more than 4K. 
-  // also queue_size should only be used for IO queues and not for admin queues. 
-  aqp->sq.q.qs = queue_size;
+  aqp->sq.q.qs = queue_size ;
   aqp->cq.q.qs = queue_size;
-
-
-
 
   aqp->c = c;
   spin_lock_init(&aqp->lock);
+
+
+//TODO: merge the DMA allocs. Change in Free too. 
 
   aqp->cq.q.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->cq.q.es,
                                     &aqp->cq.q_dma_addr, GFP_KERNEL);
@@ -59,8 +58,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq.q.phase = 1;
 
 
-  //TODO: can we make the below to make it readable?
-  //aqp->sq.q.db = (volatile u32 *)(&c->regs->SQ0TDBL);
+  //TODO: can we make the below to make it readable? It seems like we have a bug in the regs data struct. Revisit. 
+  //aqp->sq.q.db = (volatile u32*)(&c->regs->SQ0TDBL);
   aqp->sq.q.db = (volatile u32*)(((volatile u8*)c->reg_addr) + (0x1000));
 
   //printk(KERN_INFO "sq db: %llx\n", aqp->sq.q.db);
@@ -91,6 +90,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   /*The next set of steps initializes the nvme controller. 
   * Refer section 7.6.1 of v1.4 June 2019 spec for the complete step details.
   */
+  //disable interrupts of the device
+  c->regs->INTMS = 0xffffffff;
+  c->regs->INTMC = 0x0;
 
   //reset the controller
   *cc = *cc & ~1;
@@ -120,8 +122,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   }
 
   //disable interrupts of the device
-  c->regs->INTMS = 0xffffffff;
-  c->regs->INTMC = 0x0;
+//  c->regs->INTMS = 0xffffffff;
+//  c->regs->INTMC = 0x0;
   
   msleep(20000);
   printk(KERN_INFO "[admin_init] finished second loop\n");
@@ -139,6 +141,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 }
 
 /*Removes the entires of the admin queue from the host kernel*/
+
+//TODO: merge the DMA allocs. Change in Free too.
 void admin_clean(struct admin_queue_pair* aqp) {
   dma_free_coherent(&aqp->c->pdev->dev, aqp->sq.q.es*aqp->sq.q.qs, (void*)aqp->sq.q.addr, aqp->sq.q_dma_addr);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->cq.q.es*aqp->cq.q.qs, (void*)aqp->cq.q.addr, aqp->cq.q_dma_addr);
@@ -280,9 +284,9 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
   u8  flipped;
   spin_lock(&aqp->lock);
   barrier();
-  cur_phase                          = aqp->cq.q.phase;
-  cur_head = aqp->cq.q.head;
-  flipped = 0;
+  cur_phase  = aqp->cq.q.phase;
+  cur_head   = aqp->cq.q.head;
+  flipped    = 0;
   for(i = 0; true; i++) {
     l = (cur_head + i) % aqp->cq.q.qs;
     dword                            = (((volatile struct cpl*)aqp->cq.q.addr)+l)->dword[3];
@@ -312,7 +316,7 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
     cmd_.dword[i] = 0;
   }
 
-  cmd_.dword[0] = DEV_SELF_TEST;
+  cmd_.dword[0]  = DEV_SELF_TEST;
   cmd_.dword[10] = 0x01;
 
   ret1 = admin_enqueue_command(aqp, &cmd_);

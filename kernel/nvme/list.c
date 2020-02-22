@@ -33,7 +33,7 @@ void list_insert(struct list* l, struct list_node* e) {
 
 void list_remove(struct list_node* e) {
   /*likely() call provides a hint to do speculative execution that it has high chance of being true*/
-  if (likely((e != NULL) && (e->list != NULL) && (e != &e->list->head))) { //TODO: is the last part essentially checking for empty list?
+  if (likely((e != NULL) && (e->list != NULL) && (e != &e->list->head))) {  
     spin_lock(&e->list->lock);
 
     e->prev->next = e->next;
