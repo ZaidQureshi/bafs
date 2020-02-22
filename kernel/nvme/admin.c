@@ -58,13 +58,20 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->cq.q.phase = 1;
   aqp->sq.q.phase = 1;
 
+
+  //TODO: can we make the below to make it readable?
+  //aqp->sq.q.db = (volatile u32 *)(&c->regs->SQ0TDBL);
   aqp->sq.q.db = (volatile u32*)(((volatile u8*)c->reg_addr) + (0x1000));
 
   //printk(KERN_INFO "sq db: %llx\n", aqp->sq.q.db);
 
+  //read the doorbel register stide
   c->dstrd = ((volatile u32*)(&c->regs->CAP))[1];
+  //read the max page size
+  //mpsmax = (c->regs->CAP & MPSMAX_MASK) >> MPSMAX_OFFSET;
   mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
 
+  //c->timeout = (c->regs->CAP & TO_MASK) >> TO_OFFSET;
   c->timeout = (c->regs->CAP & 0x000000000fffffff) >> 24;
 
   c->page_size = 1 << (12 + mpsmax);
@@ -81,19 +88,19 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->cq.q.db = (volatile u32*)(((volatile u8*)aqp->sq.q.db) + (1 * (4 << c->dstrd)));
 
 
+  /*The next set of steps initializes the nvme controller. 
+  * Refer section 7.6.1 of v1.4 June 2019 spec for the complete step details.
+  */
 
-
-
-
-
+  //reset the controller
   *cc = *cc & ~1;
   barrier();
-
+  //wait for the status bit to go high
   while ((csts[0] & 0x01) != 0) {
-
     barrier();
   }
 
+  //Program the admin queues. 
   //printk(KERN_INFO "[admin_init] Finished first loop\n");
   c->regs->AQA = ((queue_size-1) << 16) | (queue_size-1);
 
@@ -101,14 +108,18 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
   c->regs->ASQ = aqp->sq.q_dma_addr;
 
-
+  //program the CQ, SQ and Max page size and reset the controller. 
+  // by default we have round robin arbitration scheme for SQ-CQ pair. 
   *cc = (cqes << 20) | (sqes << 16)| (mpsmax << 7)| 0x0001;
 
   barrier();
 
+  //wait for the status bit to go high
   while ((csts[0] & 0x01) != 1) {
     barrier();
   }
+
+  //disable interrupts of the device
   c->regs->INTMS = 0xffffffff;
   c->regs->INTMC = 0x0;
   
@@ -127,7 +138,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
 }
 
-
+/*Removes the entires of the admin queue from the host kernel*/
 void admin_clean(struct admin_queue_pair* aqp) {
   dma_free_coherent(&aqp->c->pdev->dev, aqp->sq.q.es*aqp->sq.q.qs, (void*)aqp->sq.q.addr, aqp->sq.q_dma_addr);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->cq.q.es*aqp->cq.q.qs, (void*)aqp->cq.q.addr, aqp->cq.q_dma_addr);
@@ -137,6 +148,8 @@ void admin_clean(struct admin_queue_pair* aqp) {
 }
 
 
+/*Submit a commnad to the admin SQ and ring the doorbel.*/
+
 s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
   u16 loc;
   u64 cid;
@@ -145,12 +158,13 @@ s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
   cid = MAX_CMD;
   spin_lock(&aqp->lock);
 
+  //if queue full, wait
   if (((u16) (aqp->sq.q.tail - aqp->sq.q.head) % aqp->sq.q.qs) == (aqp->sq.q.qs - 1)) {
 
     spin_unlock(&aqp->lock);
     return -1;
   }
-
+  //get loc to write
   loc = aqp->sq.q.tail;
 
   for (i = 0; i < MAX_CMD; i++)
@@ -168,16 +182,15 @@ s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
     return -1;
   }
 
-  
-
+  //create cmd
   cmd_->dword[0] |= (uint32_t)((cid << 16));
 
   *(((volatile struct cmd*)(aqp->sq.q.addr))+loc) = *cmd_;
 
-
+  //increament tail ptr if successful enqueue
   aqp->sq.q.tail = (aqp->sq.q.tail + 1) % aqp->sq.q.qs;
 
-
+  //write db with the next tail ptr to tell that the device can read the cmd
   barrier();
   *aqp->sq.q.db = aqp->sq.q.tail;
   barrier();
@@ -191,8 +204,10 @@ void admin_sq_mark_cleanup(struct admin_queue_pair* aqp, const u16 loc) {
   u64         old_head;
   struct cmd* cmd_;
   u16         cid;
+  
   spin_lock(&aqp->lock);
-  cmd_ = (((struct cmd*)(aqp->sq.q.addr))+loc);
+
+  cmd_                = (((struct cmd*)(aqp->sq.q.addr))+loc);
   cid                 = cmd_->dword[0] >> 16;
   aqp->sq.q.cid[cid]  = 0;
   aqp->sq.q.mark[loc] = 1;
@@ -254,6 +269,7 @@ void admin_cq_mark_cleanup(struct admin_queue_pair* aqp, const u16 loc) {
 
   spin_unlock(&aqp->lock);
 }
+
 
 s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
   u32 i;
@@ -319,6 +335,8 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
   admin_sq_mark_cleanup(aqp, ret1);
   admin_cq_mark_cleanup(aqp, ret2);
 }
+
+
 void admin_create_cq(struct admin_queue_pair* aqp) {
   spin_lock(&aqp->lock);
 
