@@ -5,7 +5,7 @@
 #include "../kernel/nvme/list.h"
 #endif
 
-
+//TODO: What is the queue struct here ? What is mark refer to? and why are we usin git for admin queues?
 struct queue {
   uint16_t           no;
   uint64_t           es;
