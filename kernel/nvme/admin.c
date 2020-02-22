@@ -1,6 +1,7 @@
 #include "admin.h"
 #include <linux/spinlock.h>
 #include <linux/log2.h>
+#include <linux/delay.h>
 
 void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
  
@@ -59,7 +60,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
   aqp->sq.q.db = (volatile u32*)(((volatile u8*)c->reg_addr) + (0x1000));
 
-  printk(KERN_INFO "sq db: %llx\n", aqp->sq.q.db);
+  //printk(KERN_INFO "sq db: %llx\n", aqp->sq.q.db);
 
   c->dstrd = ((volatile u32*)(&c->regs->CAP))[1];
   mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
@@ -73,9 +74,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   sqes = ilog2(aqp->sq.q.es);
   ps   = ilog2(c->page_size);
 
-  printk(KERN_INFO "cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\n",
+  printk(KERN_INFO "cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\tcq_dma_addr: %llx\tsq_dma_addr: %llx\n",
          (unsigned long long) cqes, (unsigned long long) aqp->cq.q.es, (unsigned long long) sqes, (unsigned long long) aqp->sq.q.es,
-         (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout);
+         (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout, aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
 
   aqp->cq.q.db = (volatile u32*)(((volatile u8*)aqp->sq.q.db) + (1 * (4 << c->dstrd)));
 
@@ -89,10 +90,11 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   barrier();
 
   while ((csts[0] & 0x01) != 0) {
+
     barrier();
   }
 
-  printk(KERN_INFO "[admin_init] Finished first loop\n");
+  //printk(KERN_INFO "[admin_init] Finished first loop\n");
   c->regs->AQA = ((queue_size-1) << 16) | (queue_size-1);
 
   c->regs->ACQ = aqp->cq.q_dma_addr;
@@ -110,15 +112,19 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   c->regs->INTMS = 0xffffffff;
   c->regs->INTMC = 0x0;
   
-
+  msleep(20000);
   printk(KERN_INFO "[admin_init] finished second loop\n");
 
   admin_dev_self_test(aqp);
+  /*
+  msleep(20000);
+  admin_dev_self_test(aqp);
+
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
   admin_dev_self_test(aqp);
-  admin_dev_self_test(aqp);
-  
+  */
+
 }
 
 
@@ -303,8 +309,9 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
 
 
   ret2 = admin_cq_poll(aqp, cid);
-
+  i = 0;
   while (ret2 == -1) {
+    if ((i++%100) == 0)
     printk(KERN_INFO "[admin_dev_self_test] retry polling\n");
     ret2 = admin_cq_poll(aqp, cid);
   }
@@ -312,7 +319,7 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
   admin_sq_mark_cleanup(aqp, ret1);
   admin_cq_mark_cleanup(aqp, ret2);
 }
-void admin_cq_create(struct admin_queue_pair* aqp) {
+void admin_create_cq(struct admin_queue_pair* aqp) {
   spin_lock(&aqp->lock);
 
 

@@ -25,6 +25,7 @@ struct queue {
 #ifdef KERN
 struct queue_k {
   struct queue q;
+  struct list_node list;
   spinlock_t lock;
   dma_addr_t q_dma_addr;
 };
