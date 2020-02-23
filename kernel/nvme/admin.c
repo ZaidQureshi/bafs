@@ -90,9 +90,6 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   /*The next set of steps initializes the nvme controller. 
   * Refer section 7.6.1 of v1.4 June 2019 spec for the complete step details.
   */
-  //disable interrupts of the device
-  c->regs->INTMS = 0xffffffff;
-  c->regs->INTMC = 0x0;
 
   //reset the controller
   *cc = *cc & ~1;
@@ -102,8 +99,10 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
     barrier();
   }
 
-  //Program the admin queues. 
-  //printk(KERN_INFO "[admin_init] Finished first loop\n");
+  printk(KERN_INFO "[admin_init] Finished first loop\n");
+  
+  //Program the admin queue 
+  
   c->regs->AQA = ((queue_size-1) << 16) | (queue_size-1);
 
   c->regs->ACQ = aqp->cq.q_dma_addr;
@@ -122,10 +121,10 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   }
 
   //disable interrupts of the device
-//  c->regs->INTMS = 0xffffffff;
-//  c->regs->INTMC = 0x0;
+  c->regs->INTMS = 0xffffffff;
+  c->regs->INTMC = 0x0;
   
-  msleep(20000);
+  //msleep(20000);
   printk(KERN_INFO "[admin_init] finished second loop\n");
 
   admin_dev_self_test(aqp);
@@ -292,6 +291,7 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
     dword                            = (((volatile struct cpl*)aqp->cq.q.addr)+l)->dword[3];
     if ((dword & 0x0000ffff)        == cid) {
       if ((!!((dword >> 16) & 0x1)) == cur_phase) {
+        printk(KERN_INFO "FOUND!!\n");
         spin_unlock(&aqp->lock);
         return l;
       }
@@ -331,8 +331,8 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
   ret2 = admin_cq_poll(aqp, cid);
   i = 0;
   while (ret2 == -1) {
-    if ((i++%100) == 0)
-    printk(KERN_INFO "[admin_dev_self_test] retry polling\n");
+    if ((i++) == 100)
+      break;
     ret2 = admin_cq_poll(aqp, cid);
   }
   printk("[admin_dev_self_test] found\n");

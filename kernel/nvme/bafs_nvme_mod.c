@@ -155,7 +155,8 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     }
 
     //pci_free_irq_vectors(pdev);
-    
+    /*Requests the bus to become master of DMA and enables it*/
+    pci_set_master(pdev);
 
     printk(KERN_INFO "[add_pci_dev] Adding controller device: %02x:%02x.%1x",
            pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
@@ -194,12 +195,12 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return err;
     }
 
-    /*Requests the bus to become master of DMA and enables it*/
-    pci_set_master(pdev);
+
+
 
     curr_ctrls++;
 
-    //int_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, c->reg_addr, 4*16, false);
+    print_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, c->reg_addr, 4*16, false);
     printk(KERN_INFO "[add_pci_dev]\tAddr: %p\tCAP: %llx\tCC: %x\n", c->reg_addr, c->regs->CAP, c->regs->CC);
     return 0;
 }
@@ -318,7 +319,7 @@ static void __exit bafs_nvme_exit(void) {
   class_destroy(dev_class);
   unregister_chrdev_region(dev_first, num_ctrls);
 
-  printk(KERN_INFO "[bafs_nvme_init] Driver Unloaded\n");
+  printk(KERN_INFO "[bafs_nvme_exit] Driver Unloaded\n");
 
 }
 
