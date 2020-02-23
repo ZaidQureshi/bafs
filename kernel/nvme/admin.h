@@ -18,7 +18,7 @@ struct admin_queue_pair {
   struct queue_k sq;
   spinlock_t     lock;
   struct ctrl*   c;
-  
+  u8* queue_use_mark;
 
 };
 
@@ -68,5 +68,7 @@ void admin_clean(struct admin_queue_pair* aqp);
 
 /*This is a self test opcode for the controller.*/
 void admin_dev_self_test(struct admin_queue_pair* aqp);
+
+void admin_set_num_queues(struct admin_queue_pair* aqp);
 
 #endif

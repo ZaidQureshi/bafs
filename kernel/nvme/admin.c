@@ -127,7 +127,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //msleep(20000);
   printk(KERN_INFO "[admin_init] finished second loop\n");
 
-  admin_dev_self_test(aqp);
+  //admin_dev_self_test(aqp);
+  admin_set_num_queues(aqp);
   /*
   msleep(20000);
   admin_dev_self_test(aqp);
@@ -291,7 +292,6 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
     dword                            = (((volatile struct cpl*)aqp->cq.q.addr)+l)->dword[3];
     if ((dword & 0x0000ffff)        == cid) {
       if ((!!((dword >> 16) & 0x1)) == cur_phase) {
-        printk(KERN_INFO "FOUND!!\n");
         spin_unlock(&aqp->lock);
         return l;
       }
@@ -329,16 +329,51 @@ void admin_dev_self_test(struct admin_queue_pair* aqp) {
 
 
   ret2 = admin_cq_poll(aqp, cid);
-  i = 0;
   while (ret2 == -1) {
-    if ((i++) == 100)
-      break;
     ret2 = admin_cq_poll(aqp, cid);
   }
   printk("[admin_dev_self_test] found\n");
   admin_sq_mark_cleanup(aqp, ret1);
   admin_cq_mark_cleanup(aqp, ret2);
 }
+
+void admin_set_num_queues(struct admin_queue_pair* aqp) {
+  struct cmd cmd_;
+  struct cpl cpl_;
+  u16 i;
+  s32 ret1, ret2;
+  u32 cid;
+  for (i = 0; i < 16; i++) {
+    cmd_.dword[i] = 0;
+  }
+
+  cmd_.dword[0]  = GET_FEAT;
+  cmd_.dword[10] = 0x07;
+
+  cmd_.dword[11] = (((u32)65534) << 16) | 65534;
+
+  ret1 = admin_enqueue_command(aqp, &cmd_);
+  while (ret1 == -1) {
+    printk(KERN_INFO "[admin_dev_self_test] retry enqueuing\n");
+    ret1 = admin_enqueue_command(aqp, &cmd_);
+  }
+
+  cid = cmd_.dword[0] >> 16;
+
+
+  ret2 = admin_cq_poll(aqp, cid);
+  while (ret2 == -1) {
+    ret2 = admin_cq_poll(aqp, cid);
+  }
+
+  cpl_ = *(((volatile struct cpl*) aqp->cq.q.addr) + ret2);
+  printk(KERN_INFO "Num IO CQ: %llu\tNum IO SQ: %llu\n",
+         (unsigned long long) (cpl_.dword[0] >> 16), (unsigned long long) (cpl_.dword[0] & 0x0000ffff));
+  printk("[admin_dev_self_test] found\n");
+  admin_sq_mark_cleanup(aqp, ret1);
+  admin_cq_mark_cleanup(aqp, ret2);
+}
+
 
 
 void admin_create_cq(struct admin_queue_pair* aqp) {
