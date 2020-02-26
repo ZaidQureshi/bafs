@@ -9,10 +9,10 @@
 #define _SBIT_MASK(num_bits) ((1ULL << (num_bits)))
 
 /*Extract range of bits - example from 10 to 12. i.e bit 10, 11 and 12*/
-#define _RBIT_MASK(high,low) (_BIT_MASK((high) + 1) - _BIT_MASK(lo))
+#define _RBIT_MASK(high,low) (_BIT_MASK((high) + 1) - _BIT_MASK(low))
 
 /*Extract range of bits from register/value*/
-#define _RDBITS(val, high, low) (((val) & _RBIT_MASK((high),(low))) >> (lo))
+#define _RDBITS(val, high, low) (((val) & _RBIT_MASK((high),(low))) >> (low))
 
 //TODO: Can this be converted to a constexpr?
 /*Read register value*/
@@ -31,6 +31,7 @@
 #define BAFS_CQ_SQHP(ptr)   _REG(ptr,  8, 16)
 #define BAFS_CQ_SQID(ptr)   _REG(ptr, 10, 16)
 #define BAFS_CQ_CID(ptr)    _REG(ptr, 12, 16) //This is in DW3
+
 // this is status field
 #define BAFS_CQ_STS(ptr)    _REG(ptr, 14, 16)
 #define BAFS_CQ_PHASE(ptr) (_REG(ptr, 14, 16) & 0x1) //this is phase bit
