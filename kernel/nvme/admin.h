@@ -65,4 +65,6 @@ void admin_set_num_queues(struct admin_queue_pair* aqp);
 
 struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp);
 
+void admin_delete_io_queue_pair(struct admin_queue_pair* aqp, const u32 i);
+
 #endif

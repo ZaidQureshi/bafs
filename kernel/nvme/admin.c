@@ -49,17 +49,17 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq.q.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->sq.q.es,
                                     &aqp->sq.q_dma_addr, GFP_KERNEL);
 
-  printk(KERN_INFO "HERE1\n");
+  
 
   aqp->cq.q.mark = kmalloc(queue_size, GFP_KERNEL);
   aqp->sq.q.mark = kmalloc(queue_size, GFP_KERNEL);
 
-  printk(KERN_INFO "HERE2\n");
+
   aqp->sq.q.cid = kmalloc(MAX_CMD, GFP_KERNEL);
   memset(aqp->cq.q.mark, 0, queue_size);
   memset(aqp->sq.q.mark, 0, queue_size);
   memset(aqp->sq.q.cid, 0, MAX_CMD);
-  printk(KERN_INFO "HERE3\n");
+
   aqp->cq.q.phase = 1;
   aqp->sq.q.phase = 1;
 
@@ -160,6 +160,11 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 
 //TODO: merge the DMA allocs. Change in Free too.
 void admin_clean(struct admin_queue_pair* aqp) {
+  u32 i;
+  for(i = 0; i < aqp->num_io_queue_pairs_supported; i++) {
+    if (aqp->queue_use_mark[i] == 1)
+      admin_delete_io_queue_pair(aqp, i);
+  }
   dma_free_coherent(&aqp->c->pdev->dev, aqp->sq.q.es*aqp->sq.q.qs, (void*)aqp->sq.q.addr, aqp->sq.q_dma_addr);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->cq.q.es*aqp->cq.q.qs, (void*)aqp->cq.q.addr, aqp->cq.q_dma_addr);
   kfree(aqp->queue_use_mark);
@@ -398,9 +403,7 @@ void admin_set_num_queues(struct admin_queue_pair* aqp) {
          (unsigned long long) (cpl_.dword[0] >> 16), (unsigned long long) (cpl_.dword[0] & 0x0000ffff));
   printk("[admin_dev_self_test] found\n");
   admin_sq_mark_cleanup(aqp, ret1);
-  printk("[admin_dev_self_test] ret1\n");
   admin_cq_mark_cleanup(aqp, ret2);
-  printk("[admin_dev_self_test] ret2\n");
 }
 
 
@@ -428,6 +431,7 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
       break;
     }
   }
+  barrier();
   spin_unlock(&aqp->lock);
   if (i == aqp->num_io_queue_pairs_supported) {
     return NULL;
@@ -528,4 +532,73 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
   new_qp->sq.no = i+1;
   new_qp->cq.no = i+1;
   return new_qp;
+}
+
+
+void admin_delete_io_queue_pair(struct admin_queue_pair* aqp, const u32 i) {
+
+  struct cmd cmd_;
+  struct cpl cpl_;
+  u32 cid;
+  s32 ret1, ret2;
+  struct queue_pair* del_qp = aqp->io_qp_list[i];
+  clear_cmd(&cmd_);
+  cmd_.dword[0]  = DEL_IO_SQ;
+  cmd_.dword[10] = i+1;
+
+  ret1 = admin_enqueue_command(aqp, &cmd_);
+  while (ret1 == -1) {
+    printk(KERN_INFO "[admin_delete_io_queue_pair] retry enqueuing\n");
+    ret1 = admin_enqueue_command(aqp, &cmd_);
+  }
+
+  cid = cmd_.dword[0] >> 16;
+
+
+  ret2 = admin_cq_poll(aqp, cid);
+  while (ret2 == -1) {
+    ret2 = admin_cq_poll(aqp, cid);
+  }
+  printk("[admin_delete_io_queue_pair] found\n");
+  admin_sq_mark_cleanup(aqp, ret1);
+  admin_cq_mark_cleanup(aqp, ret2);
+  
+  clear_cmd(&cmd_);
+  cmd_.dword[0]  = DEL_IO_CQ;
+  cmd_.dword[10] = i+1;
+
+  ret1 = admin_enqueue_command(aqp, &cmd_);
+  while (ret1 == -1) {
+    printk(KERN_INFO "[admin_delete_io_queue_pair] retry enqueuing\n");
+    ret1 = admin_enqueue_command(aqp, &cmd_);
+  }
+
+  cid = cmd_.dword[0] >> 16;
+
+
+  ret2 = admin_cq_poll(aqp, cid);
+  while (ret2 == -1) {
+    ret2 = admin_cq_poll(aqp, cid);
+  }
+  printk("[admin_delete_io_queue_pair] found\n");
+  admin_sq_mark_cleanup(aqp, ret1);
+  admin_cq_mark_cleanup(aqp, ret2);
+
+  dma_free_coherent(&aqp->c->pdev->dev,
+                    del_qp->cq.qs * del_qp->cq.es,
+                    (void*)del_qp->cq.addr,
+                    aqp->cq_dma_addrs[i]);
+
+  dma_free_coherent(&aqp->c->pdev->dev,
+                    del_qp->sq.qs * del_qp->sq.es,
+                    (void*)del_qp->sq.addr,
+                    aqp->sq_dma_addrs[i]);
+
+  kfree(aqp->io_qp_list[i]);
+
+  spin_lock(&aqp->lock);
+  aqp->queue_use_mark[i] = 0;
+  barrier();
+  spin_unlock(&aqp->lock);
+
 }
