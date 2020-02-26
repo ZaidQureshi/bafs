@@ -2,6 +2,8 @@
 #include <linux/spinlock.h>
 #include <linux/log2.h>
 #include <linux/delay.h>
+#include <bafs_error.h>
+#include <bafs_utils.h>
 
 void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   u32 cqes;
@@ -14,10 +16,10 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   volatile u32* csts  = &c->regs->CSTS;
 
 //Read the maximum individual IO queue size supported by the controller. +1 is added for easier check
-  u32 queue_size = ((volatile u16*)(&c->regs->CAP))[0] + 1;
-  aqp->c = c;
-  aqp->c->max_queue_size = queue_size;
-  queue_size     = queue_size > 4096 ? 4096 : queue_size;
+  u32 queue_size          = ((volatile u16*)(&c->regs->CAP))[0] + 1;
+  aqp->c                  = c;
+  aqp->c->max_queue_size  = queue_size;
+  queue_size              = queue_size > 4096 ? 4096 : queue_size;
 
 //initialize admin sq and cq data structs
   aqp->sq.q.head = 0;
@@ -76,6 +78,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   printk(KERN_WARNING "DSTRD: %llx\n", c->dstrd);
   //read the max page size
   //mpsmax = (c->regs->CAP & MPSMAX_MASK) >> MPSMAX_OFFSET;
+  //mpsmax = _RDBITS(c->regs->CAP, 55, 50);
   mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
 
   //c->timeout = (c->regs->CAP & TO_MASK) >> TO_OFFSET;
