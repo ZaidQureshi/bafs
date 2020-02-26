@@ -13,14 +13,6 @@
 #define TO_MASK             0x00000000FFFFFFFF
 #define TO_OFFSET           24
 
-struct admin_queue_pair {
-  struct queue_k cq;
-  struct queue_k sq;
-  spinlock_t     lock;
-  struct ctrl*   c;
-  u8* queue_use_mark;
-
-};
 
 /*Refer section 5 for details*/
 enum admin_cmd_opcode {
@@ -70,5 +62,7 @@ void admin_clean(struct admin_queue_pair* aqp);
 void admin_dev_self_test(struct admin_queue_pair* aqp);
 
 void admin_set_num_queues(struct admin_queue_pair* aqp);
+
+struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp);
 
 #endif

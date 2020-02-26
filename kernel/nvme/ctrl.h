@@ -31,6 +31,7 @@ struct ctrl {
   u32                        timeout;   // Time out value of the device.
   struct list                sq_list;
   struct list                cq_list;
+  u32 max_queue_size;
 
 
 };
