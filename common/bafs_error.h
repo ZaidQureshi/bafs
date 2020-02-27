@@ -8,7 +8,7 @@
 
 #define _UNPACK_SCT(status) (_RDBITS(status, 27, 25))
 #define _UNPACK_SC(status)  (_RDBITS(status, 24, 17))
-#define _SUCCESS(status)    (! (status >> 1))   // if all bits are 0 then success. 
+#define _SUCCESS(status)    ((status>>1) == 0)   // if all bits are 0 then success. 
 
 /*Refer Section 4.6.1.2.1 in rv1.4 June 2019*/
 static const char* generic_cmd_status[] = {
@@ -137,12 +137,14 @@ static const char* printError_t(uint8_t sct, uint8_t sc){
 
 
 
-const char* bafsError_t (int status){
+const char* bafsError_t (uint32_t status){
     uint8_t sct = 0;
     uint8_t sc  = 0;
 
     sct = _UNPACK_SCT(status);
     sc  = _UNPACK_SC(status);
+
+    //printk(KERN_INFO "[debug] status field: %llx - sct: %llu - sc: %llu", status, sct, sc);
 
     if(sct != 0 || sc != 0){
         return printError_t(sct, sc);

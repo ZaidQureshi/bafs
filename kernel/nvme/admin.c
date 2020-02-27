@@ -44,15 +44,12 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->num_io_queue_pairs_used = 0;
   spin_lock_init(&aqp->lock);
 
-
 //TODO: merge the DMA allocs. Change in Free too. 
-
   aqp->cq.q.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->cq.q.es,
                                     &aqp->cq.q_dma_addr, GFP_KERNEL);
   aqp->sq.q.addr = dma_alloc_coherent(&c->pdev->dev, queue_size * aqp->sq.q.es,
                                     &aqp->sq.q_dma_addr, GFP_KERNEL);
 
-  
 
   aqp->cq.q.mark = kmalloc(queue_size, GFP_KERNEL);
   aqp->sq.q.mark = kmalloc(queue_size, GFP_KERNEL);
@@ -78,14 +75,11 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   c->dstrd     = _RDBITS(c->regs->CAP, 35, 32);
 
   printk(KERN_WARNING "DSTRD: %llx\n", c->dstrd);
-  //read the max page size
-  //mpsmax = (c->regs->CAP & MPSMAX_MASK) >> MPSMAX_OFFSET;
+ //read the max page size
+ //mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
   mpsmax       = _RDBITS(c->regs->CAP, 55, 50);
-  //mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
 
-  //c->timeout = (c->regs->CAP & TO_MASK) >> TO_OFFSET;
   c->timeout   = _RDBITS(c->regs->CAP, 31, 24);
-  //c->timeout = (c->regs->CAP & 0x000000000fffffff) >> 24; WRONG
   //c->timeout = (c->regs->CAP & 0x00000000ffffffff) >> 24;
 
   c->page_size = 1 << (12 + mpsmax);
@@ -119,7 +113,6 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   printk(KERN_INFO "[admin_init] Finished first loop\n");
   
   //Program the admin queue 
-  
   c->regs->AQA = ((queue_size-1) << 16) | (queue_size-1);
 
   c->regs->ACQ = aqp->cq.q_dma_addr;
@@ -149,7 +142,6 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->queue_use_mark = kmalloc(aqp->num_io_queue_pairs_supported, GFP_KERNEL);
 
   aqp->io_qp_list = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(struct queue_pair*), GFP_KERNEL);
-
 
   memset(aqp->io_qp_list, 0, aqp->num_io_queue_pairs_supported * sizeof(struct queue_pair*));
   memset(aqp->queue_use_mark, 0, aqp->num_io_queue_pairs_supported);
@@ -315,6 +307,7 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
   u32 l;
   u32 dword;
   u8  flipped;
+  u32 status;
   spin_lock(&aqp->lock);
   barrier();
   cur_phase  = aqp->cq.q.phase;
@@ -323,9 +316,10 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
   for(i = 0; true; i++) {
     l = (cur_head + i) % aqp->cq.q.qs;
     dword                            = (((volatile struct cpl*)aqp->cq.q.addr)+l)->dword[3];
+    status                           = dword >> 16;
     if ((dword & 0x0000ffff)        == cid) {
       if ((!!((dword >> 16) & 0x1)) == cur_phase) {
-        printk(KERN_INFO "[admin_cq_poll] status field: %llx", (dword >> 17));
+        printk(KERN_INFO "[admin_cq_poll] status field: %llx: [%s]", (status>>1), bafsError_t(status));
         spin_unlock(&aqp->lock);
         return l;
       }

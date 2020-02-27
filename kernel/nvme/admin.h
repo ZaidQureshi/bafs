@@ -7,11 +7,6 @@
 
 
 #define MAX_CMD             65536
-#define MPSMAX_MASK         0x00FFFFFFFFFFFFFF
-#define MPSMAX_OFFSET       52
-#define TO_MASK             0x00000000FFFFFFFF
-#define TO_OFFSET           24
-
 
 /*Refer section 5 for details*/
 enum admin_cmd_opcode {
