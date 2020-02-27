@@ -166,6 +166,7 @@ void admin_clean(struct admin_queue_pair* aqp) {
     if (aqp->queue_use_mark[i] == 1)
       admin_delete_io_queue_pair(aqp, i);
   }
+  spin_unlock(&aqp->lock);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->sq.q.es*aqp->sq.q.qs, (void*)aqp->sq.q.addr, aqp->sq.q_dma_addr);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->cq.q.es*aqp->cq.q.qs, (void*)aqp->cq.q.addr, aqp->cq.q_dma_addr);
   kfree(aqp->queue_use_mark);
@@ -175,7 +176,7 @@ void admin_clean(struct admin_queue_pair* aqp) {
   kfree(aqp->cq.q.mark);
   kfree(aqp->sq.q.mark);
   kfree(aqp->sq.q.cid);
-  spin_unlock(&aqp->lock);
+
 }
 
 
