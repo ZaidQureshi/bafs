@@ -161,6 +161,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 //TODO: merge the DMA allocs. Change in Free too.
 void admin_clean(struct admin_queue_pair* aqp) {
   u32 i;
+  spin_lock(&aqp->lock);
   for(i = 0; i < aqp->num_io_queue_pairs_supported; i++) {
     if (aqp->queue_use_mark[i] == 1)
       admin_delete_io_queue_pair(aqp, i);
@@ -174,6 +175,7 @@ void admin_clean(struct admin_queue_pair* aqp) {
   kfree(aqp->cq.q.mark);
   kfree(aqp->sq.q.mark);
   kfree(aqp->sq.q.cid);
+  spin_unlock(&aqp->lock);
 }
 
 
