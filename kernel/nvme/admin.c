@@ -377,7 +377,7 @@ void clear_cmd(struct cmd* cmd_) {
 void admin_set_num_queues(struct admin_queue_pair* aqp) {
   struct cmd cmd_;
   struct cpl cpl_;
-  u16 i;
+  //u16 i;
   s32 ret1, ret2;
   u32 cid;
   clear_cmd(&cmd_);
@@ -418,7 +418,7 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
   u32 i;
   s32 ret1, ret2;
   u32 cid;
-  u64 addr;
+  //u64 addr;
   u32 qs;
   clear_cmd(&cmd_);
   
@@ -542,7 +542,7 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
 void admin_delete_io_queue_pair(struct admin_queue_pair* aqp, const u32 i) {
 
   struct cmd cmd_;
-  struct cpl cpl_;
+  //struct cpl cpl_;
   u32 cid;
   s32 ret1, ret2;
   struct queue_pair* del_qp = aqp->io_qp_list[i];
