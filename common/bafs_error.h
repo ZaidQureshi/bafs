@@ -1,10 +1,10 @@
 #ifndef __BAFS_ERRORS__
 #define __BAFS_ERRORS__
 
-#include <stdint.h>
-#include <bafs_utils.h>
-#include <string.h>
-#include <errno.h>
+//#include <stdint.h>
+#include "bafs_utils.h"
+//#include <string.h>
+//#include <errno.h>
 
 #define _UNPACK_SCT(status) (_RDBITS(status, 27, 25))
 #define _UNPACK_SC(status)  (_RDBITS(status, 24, 17))
@@ -148,10 +148,18 @@ const char* bafsError_t (int status){
         return printError_t(sct, sc);
     }
     else if (_SUCCESS(status)){
+#ifdef KERN
+        return "Success";
+#else 
         return strerror(0);
+#endif 
     }
 
-    return strerror(status);
+#ifdef KERN
+        return "Unknown";
+#else 
+        return strerror(status);
+#endif 
 }
 
 

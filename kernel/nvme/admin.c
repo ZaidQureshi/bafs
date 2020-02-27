@@ -2,8 +2,8 @@
 #include <linux/spinlock.h>
 #include <linux/log2.h>
 #include <linux/delay.h>
-#include <bafs_error.h>
-#include <bafs_utils.h>
+#include "../../common/bafs_error.h"
+#include "../../common/bafs_utils.h"
 
 void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   u32 cqes;
@@ -16,7 +16,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   volatile u32* csts  = &c->regs->CSTS;
 
 //Read the maximum individual IO queue size supported by the controller. +1 is added for easier check
-  u32 queue_size          = ((volatile u16*)(&c->regs->CAP))[0] + 1;
+  //u32 queue_size          = ((volatile u16*)(&c->regs->CAP))[0] + 1;
+  u32 queue_size         = _RDBITS(c->regs->CAP, 15, 0) + 1;
   aqp->c                  = c;
   aqp->c->max_queue_size  = queue_size;
   queue_size              = queue_size > 4096 ? 4096 : queue_size;
@@ -73,16 +74,19 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //printk(KERN_INFO "sq db: %llx\n", aqp->sq.q.db);
 
   //read the doorbel register stide
-  c->dstrd = ((volatile u32*)(&c->regs->CAP))[1] & 0x0f;
+  //c->dstrd = ((volatile u32*)(&c->regs->CAP))[1] & 0x0f;
+  c->dstrd     = _RDBITS(c->regs->CAP, 35, 32);
 
   printk(KERN_WARNING "DSTRD: %llx\n", c->dstrd);
   //read the max page size
   //mpsmax = (c->regs->CAP & MPSMAX_MASK) >> MPSMAX_OFFSET;
-  //mpsmax = _RDBITS(c->regs->CAP, 55, 50);
-  mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
+  mpsmax       = _RDBITS(c->regs->CAP, 55, 50);
+  //mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
 
   //c->timeout = (c->regs->CAP & TO_MASK) >> TO_OFFSET;
-  c->timeout = (c->regs->CAP & 0x000000000fffffff) >> 24;
+  c->timeout   = _RDBITS(c->regs->CAP, 31, 24);
+  //c->timeout = (c->regs->CAP & 0x000000000fffffff) >> 24; WRONG
+  //c->timeout = (c->regs->CAP & 0x00000000ffffffff) >> 24;
 
   c->page_size = 1 << (12 + mpsmax);
 
@@ -91,7 +95,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   sqes = ilog2(aqp->sq.q.es);
   ps   = ilog2(c->page_size);
 
-  printk(KERN_INFO "cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\tcq_dma_addr: %llx\tsq_dma_addr: %llx\n",
+  printk(KERN_INFO "qs: %llu\t cqes: %llu\tcq.q.es: %llu\tsqes: %llu\tsq.q.es: %llu\tps: %llu\tpage_size: %llu\tmpsmax: %llu\ttimeout: %llu\tcq_dma_addr: %llx\tsq_dma_addr: %llx\n",
+          (unsigned long long) queue_size,
          (unsigned long long) cqes, (unsigned long long) aqp->cq.q.es, (unsigned long long) sqes, (unsigned long long) aqp->sq.q.es,
          (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout, aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
 

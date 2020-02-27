@@ -3,7 +3,6 @@
 
 #include "ctrl.h"
 #include "../../common/queue.h"
-
 #include <linux/spinlock.h>
 
 
