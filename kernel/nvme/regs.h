@@ -2,10 +2,6 @@
 #define __BAFS_NVME_REGS_H_
 
 
-/*One can use this to do register read operation*/
-#define _REG(p, offs, bits)                     \
-    ((volatile uint##bits##_t *) (((volatile unsigned char*) ((volatile void*) (p))) + (offs)))
-
 /*Reserved space calculation*/
 #define RES1_START 0x18
 #define RES1_END   0x1b

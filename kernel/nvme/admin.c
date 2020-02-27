@@ -74,7 +74,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //c->dstrd = ((volatile u32*)(&c->regs->CAP))[1] & 0x0f;
   c->dstrd     = _RDBITS(c->regs->CAP, 35, 32);
 
-  printk(KERN_WARNING "DSTRD: %llx\n", c->dstrd);
+  printk(KERN_WARNING "DSTRD: %lx\n", c->dstrd);
  //read the max page size
  //mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
   mpsmax       = _RDBITS(c->regs->CAP, 55, 50);
@@ -321,7 +321,7 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
     status                           = dword >> 16;
     if ((dword & 0x0000ffff)        == cid) {
       if ((!!((dword >> 16) & 0x1)) == cur_phase) {
-        printk(KERN_INFO "[admin_cq_poll] status field: %llx: [%s]", (status>>1), bafsError_t(status));
+        printk(KERN_INFO "[admin_cq_poll] status field: %lx: [%s]", (status>>1), bafsError_t(status));
         spin_unlock(&aqp->lock);
         return l;
       }
