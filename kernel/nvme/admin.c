@@ -161,12 +161,9 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
 //TODO: merge the DMA allocs. Change in Free too.
 void admin_clean(struct admin_queue_pair* aqp) {
   u32 i;
-  spin_lock(&aqp->lock);
   for(i = 0; i < aqp->num_io_queue_pairs_supported; i++) {
-    if (aqp->queue_use_mark[i] == 1)
-      admin_delete_io_queue_pair(aqp, i);
+    admin_delete_io_queue_pair(aqp, i);
   }
-  spin_unlock(&aqp->lock);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->sq.q.es*aqp->sq.q.qs, (void*)aqp->sq.q.addr, aqp->sq.q_dma_addr);
   dma_free_coherent(&aqp->c->pdev->dev, aqp->cq.q.es*aqp->cq.q.qs, (void*)aqp->cq.q.addr, aqp->cq.q_dma_addr);
   kfree(aqp->queue_use_mark);
@@ -547,9 +544,16 @@ void admin_delete_io_queue_pair(struct admin_queue_pair* aqp, const u32 i) {
   u32 cid;
   s32 ret1, ret2;
   struct queue_pair* del_qp = aqp->io_qp_list[i];
+  spin_lock(&aqp->lock);
+  if (aqp->queue_use_mark[i] == 0) {
+    spin_unlock(&aqp->lock);
+    return;
+  }
+  spin_unlock(&aqp->lock);
   clear_cmd(&cmd_);
   cmd_.dword[0]  = DEL_IO_SQ;
   cmd_.dword[10] = i+1;
+
 
   ret1 = admin_enqueue_command(aqp, &cmd_);
   while (ret1 == -1) {
