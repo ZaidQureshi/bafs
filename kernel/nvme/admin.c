@@ -321,7 +321,7 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
     status                           = dword >> 16;
     if ((dword & 0x0000ffff)        == cid) {
       if ((!!((dword >> 16) & 0x1)) == cur_phase) {
-        printk(KERN_INFO "[admin_cq_poll] status field: %lx: [%s]", (status>>1), bafsError_t(status));
+        printk(KERN_INFO "[admin_cq_poll] status field: %lx: [%s]", (status>>1), bafs_error(status));
         spin_unlock(&aqp->lock);
         return l;
       }

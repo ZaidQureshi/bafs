@@ -107,7 +107,7 @@ static const char* nvm_cmd_specific_status[] = {
 };
 
 
-static const char* printError_t(uint8_t sct, uint8_t sc){
+static const char* print_error(uint8_t sct, uint8_t sc){
 
     switch (sct){
         case 0x00: // generic command status
@@ -137,7 +137,7 @@ static const char* printError_t(uint8_t sct, uint8_t sc){
 
 
 
-const char* bafsError_t (uint32_t status){
+const char* bafs_error (uint32_t status){
     uint8_t sct = 0;
     uint8_t sc  = 0;
 
@@ -147,7 +147,7 @@ const char* bafsError_t (uint32_t status){
     //printk(KERN_INFO "[debug] status field: %llx - sct: %llu - sc: %llu", status, sct, sc);
 
     if(sct != 0 || sc != 0){
-        return printError_t(sct, sc);
+        return print_error(sct, sc);
     }
     else if (_SUCCESS(status)){
 #ifdef KERN
