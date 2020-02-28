@@ -35,16 +35,13 @@ static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigne
   unsigned long i;
   struct map* m = NULL;
 
-
   printk(KERN_WARNING "[create_descriptor] n_pages = %lu", n_pages);
   m = kmalloc(sizeof(struct map) + (n_pages - 1) * sizeof(u64), GFP_KERNEL);
 
   if (m == NULL) {
     printk(KERN_CRIT "[create_descriptor] Failed to allocate mapping descriptor\n");
     return ERR_PTR(-ENOMEM);
-
   }
-
 
   list_node_init(&m->list);
 
@@ -58,7 +55,6 @@ static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigne
 
   for (i = 0; i < m->n_addrs; i++) {
     m->addrs[i] = 0;
-
   }
 
   return m;
@@ -70,7 +66,6 @@ void unmap_and_release_map(struct map* m) {
   if ((m->release != NULL) &&
       (m->data != NULL)) {
     m->release(m);
-
   }
 
   kfree(m);
@@ -87,14 +82,11 @@ struct map* map_find(const struct list* l, u64 vaddr) {
         ((m->vaddr == (vaddr & PAGE_MASK)) ||
          (m->vaddr == (vaddr & GPU_PAGE_MASK)))) {
       return m;
-
     }
     e = list_next(e);
-
   }
 
   return NULL;
-
 }
 
 static void release_user_pages(struct map* m) {

@@ -30,8 +30,8 @@ MODULE_VERSION("0.1");
 /*Filter for the device*/
 static const struct pci_device_id id_table[] =
   {
-   { PCI_DEVICE_CLASS(PCI_CLASS_NVME, PCI_CLASS_NVME_MASK) },
-   { PCI_DEVICE(0x10ee, 0x903f), },
+  { PCI_DEVICE_CLASS(PCI_CLASS_NVME, PCI_CLASS_NVME_MASK) },
+  { PCI_DEVICE(0x10ee, 0x903f), },
 	{ PCI_DEVICE(0x10ee, 0x9038), },
 	{ PCI_DEVICE(0x10ee, 0x9028), },
 	{ PCI_DEVICE(0x10ee, 0x9018), },
@@ -195,9 +195,6 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       return err;
     }
 
-
-
-
     curr_ctrls++;
 
     print_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, c->reg_addr, 4*16, false);
@@ -234,10 +231,10 @@ static void remove_pci_dev(struct pci_dev* pdev) {
 
 static struct pci_driver driver =
   {
-   .name = DRIVER_NAME,
-   .id_table = id_table,
-   .probe = add_pci_dev,
-   .remove = remove_pci_dev,
+   .name      = DRIVER_NAME,
+   .id_table  = id_table,
+   .probe     = add_pci_dev,
+   .remove    = remove_pci_dev,
   };
 
 static unsigned long clear_map_list(struct list* l) {
