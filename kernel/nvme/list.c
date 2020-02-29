@@ -6,6 +6,20 @@
 #include <linux/compiler.h>
 #include <asm/errno.h>
 
+
+void list_node_init(struct list_node* e) {
+  e->list = NULL;
+  e->next = NULL;
+  e->prev = NULL;
+}
+
+struct list_node* list_next(const struct list_node* e) {
+  if ((e->next) != (&e->list->head))
+    return e->next;
+  else
+    return NULL;
+}
+
 void list_init(struct list* l) {
   l->head.list = l;
   l->head.prev = &l->head;

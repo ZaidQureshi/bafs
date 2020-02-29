@@ -23,19 +23,10 @@ struct list {
 };
 
 /*the list_node is init to NULL*/
-static void list_node_init(struct list_node* e) {
-  e->list = NULL;
-  e->next = NULL;
-  e->prev = NULL;
-}
+void list_node_init(struct list_node* e);
 
 /*get next element if list is not empty*/
-static struct list_node* list_next(const struct list_node* e) {
-  if ((e->next) != (&e->list->head))
-    return e->next;
-  else
-    return NULL;
-}
+struct list_node* list_next(const struct list_node* e);
 
 /*Func calls for init, insert and removal from the list*/
 

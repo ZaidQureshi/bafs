@@ -42,7 +42,7 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   c->reg_len  = pci_resource_len(c->pdev, 0);
   c->regs     = (volatile struct nvme_regs*)c->reg_addr;
 
-  printk(KERN_INFO "Reg ADDR: %llx\tReg LEN: %llu\tCAP: %llx\n", c->reg_addr, (unsigned long long) c->reg_len, c->regs->CAP);
+  printk(KERN_INFO "Reg ADDR: %llx\tReg LEN: %llu\tCAP: %llx\n", (long long unsigned int) c->reg_addr, (unsigned long long) c->reg_len, (long long unsigned int) c->regs->CAP);
   c->aqp      = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
   if (c->aqp == NULL) {
     printk(KERN_ERR "[ctrl_get] Failed to alocated admin queue\n");

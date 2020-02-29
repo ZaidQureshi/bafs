@@ -10,7 +10,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   u32 sqes;
   u32 ps;
   u32 mpsmax;
-
+  struct queue_pair* new_qp;
 //Create pointers to Controller configuration and controller status registers
   volatile u32* cc    = &c->regs->CC;
   volatile u32* csts  = &c->regs->CSTS;
@@ -74,7 +74,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //c->dstrd = ((volatile u32*)(&c->regs->CAP))[1] & 0x0f;
   c->dstrd     = _RDBITS(c->regs->CAP, 35, 32);
 
-  printk(KERN_WARNING "DSTRD: %lx\n", c->dstrd);
+  //printk(KERN_WARNING "DSTRD: %lx\n", c->dstrd);
  //read the max page size
  //mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
   mpsmax       = _RDBITS(c->regs->CAP, 55, 50);
@@ -149,7 +149,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq_dma_addrs = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(dma_addr_t), GFP_KERNEL);
   aqp->cq_dma_addrs = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(dma_addr_t), GFP_KERNEL);
 
-  struct queue_pair* new_qp = admin_create_io_queue_pair(aqp);
+  new_qp  = admin_create_io_queue_pair(aqp);
 
   
 
@@ -319,7 +319,7 @@ s32 admin_cq_poll(struct admin_queue_pair* aqp, const u16 cid) {
     status                           = dword >> 16;
     if ((dword & 0x0000ffff)        == cid) {
       if ((!!((dword >> 16) & 0x1)) == cur_phase) {
-        printk(KERN_INFO "[admin_cq_poll] status field: %lx: [%s]", (status>>1), bafs_error(status));
+        printk(KERN_INFO "[admin_cq_poll] status field: %lx: [%s]", (long unsigned int) (status>>1), bafs_error(status));
         spin_unlock(&aqp->lock);
         return l;
       }
@@ -418,6 +418,7 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
   u32 cid;
   //u64 addr;
   u32 qs;
+  struct queue_pair* new_qp;
   clear_cmd(&cmd_);
   
   spin_lock(&aqp->lock);
@@ -440,7 +441,7 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
   }
   qs = (aqp->c->max_queue_size > 4096 ? 4096 : aqp->c->max_queue_size);
   aqp->io_qp_list[i] = kmalloc(sizeof(struct queue_pair), GFP_KERNEL);
-  struct queue_pair* new_qp = aqp->io_qp_list[i];
+  new_qp = aqp->io_qp_list[i];
 
 
   new_qp->cq.es = aqp->cq.q.es;
