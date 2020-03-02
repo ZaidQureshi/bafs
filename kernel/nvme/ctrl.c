@@ -11,7 +11,7 @@
 #include <asm/errno.h>
 
 #define SAMSUNG_OFFSET 0x10000
-#define PCI_VENDOR_ID_SAMSUNG 0x144d
+#define PCI_VENDOR_ID_SAMSUNG 0x10ee
 
 
 /* ctrl_get creates a controller reference in the kernel space. 
