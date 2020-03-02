@@ -77,7 +77,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //printk(KERN_WARNING "DSTRD: %lx\n", c->dstrd);
  //read the max page size
  //mpsmax   = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
-  mpsmax       = _RDBITS(c->regs->CAP, 55, 50);
+  mpsmax       = _RDBITS(c->regs->CAP, 55, 52);
 
   c->timeout   = _RDBITS(c->regs->CAP, 31, 24);
   //c->timeout = (c->regs->CAP & 0x00000000ffffffff) >> 24;
