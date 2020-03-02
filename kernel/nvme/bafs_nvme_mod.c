@@ -93,6 +93,9 @@ static const struct pci_device_id id_table[] =
 	{0,}
   };
 
+
+
+
 /*First character device*/
 static dev_t dev_first;
 

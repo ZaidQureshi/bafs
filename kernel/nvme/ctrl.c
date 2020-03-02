@@ -10,6 +10,10 @@
 #include <linux/slab.h>
 #include <asm/errno.h>
 
+#define SAMSUNG_OFFSET 0x10000
+#define PCI_VENDOR_ID_SAMSUNG 0x144d
+
+
 /* ctrl_get creates a controller reference in the kernel space. 
 *  PCIe device specific paramters are loaded to the controller struct.
 *  We also perform the admin queue pair allocation in the controller
@@ -38,7 +42,7 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   c->name[sizeof(c->name) - 1] = '\0';
 
   /*Read the register values of the controller using PCI-IOMAP function*/
-  c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0));
+  c->reg_addr = pci_iomap(c->pdev, 0, pci_resource_len(c->pdev, 0)) + ((c->pdev->vendor == PCI_VENDOR_ID_SAMSUNG) ? SAMSUNG_OFFSET : 0);
   c->reg_len  = pci_resource_len(c->pdev, 0);
   c->regs     = (volatile struct nvme_regs*)c->reg_addr;
 
