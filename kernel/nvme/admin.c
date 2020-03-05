@@ -390,7 +390,7 @@ void admin_set_num_queues(struct admin_queue_pair* aqp) {
 
   ret1 = admin_enqueue_command(aqp, &cmd_);
   while (ret1 == -1) {
-    printk(KERN_INFO "[admin_dev_self_test] retry enqueuing\n");
+    printk(KERN_INFO "[admin_set_num_queues] retry enqueuing\n");
     ret1 = admin_enqueue_command(aqp, &cmd_);
   }
 
