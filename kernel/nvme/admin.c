@@ -135,7 +135,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   c->regs->INTMC = 0x0;
   
   //msleep(20000);
-  printk(KERN_INFO "[admin_init] finished second loop cqaddr:%llx sqaddr:%llx \n",aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
+  printk(KERN_INFO "[admin_init] finished second loop\n",aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
 
   admin_set_num_queues(aqp);
 
@@ -149,7 +149,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq_dma_addrs = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(dma_addr_t), GFP_KERNEL);
   aqp->cq_dma_addrs = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(dma_addr_t), GFP_KERNEL);
 
-  //new_qp  = admin_create_io_queue_pair(aqp);
+  new_qp  = admin_create_io_queue_pair(aqp);
 
   
 
