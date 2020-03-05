@@ -6,8 +6,8 @@
 //#include <string.h>
 //#include <errno.h>
 
-#define _UNPACK_SCT(status) (_RDBITS(status, 27, 25))
-#define _UNPACK_SC(status)  (_RDBITS(status, 24, 17))
+#define _UNPACK_SCT(status) (_RDBITS(status, 10, 8))
+#define _UNPACK_SC(status)  (_RDBITS(status, 7, 0))
 #define _SUCCESS(status)    ((status>>1) == 0)   // if all bits are 0 then success. 
 
 /*Refer Section 4.6.1.2.1 in rv1.4 June 2019*/
@@ -144,7 +144,7 @@ const char* bafs_error (uint32_t status){
     sct = _UNPACK_SCT(status);
     sc  = _UNPACK_SC(status);
 
-    //printk(KERN_INFO "[debug] status field: %llx - sct: %llu - sc: %llu", status, sct, sc);
+    printk(KERN_INFO "[debug] status field: %llx - sct: %llu - sc: %llu", status, sct, sc);
 
     if(sct != 0 || sc != 0){
         return print_error(sct, sc);
