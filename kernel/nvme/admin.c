@@ -215,6 +215,9 @@ s32 admin_enqueue_command(struct admin_queue_pair* aqp, struct cmd* cmd_) {
   cmd_->dword[0] |= (uint32_t)((cid << 16));
 
   *(((volatile struct cmd*)(aqp->sq.q.addr))+loc) = *cmd_;
+  for(i =0; i < (sizeof(struct cmd)/(sizeof(uint32_t))); ++i){
+      printk(KERN_INFO "[admin_enqueue_command] cmd dword: %d val: %lx \n", i, cmd_->dword[i]);
+  }
 
   //increament tail ptr if successful enqueue
   aqp->sq.q.tail = (aqp->sq.q.tail + 1) % aqp->sq.q.qs;
