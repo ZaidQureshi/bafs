@@ -406,7 +406,7 @@ void admin_set_num_queues(struct admin_queue_pair* aqp) {
   aqp->num_io_queue_pairs_supported = (cpl_.dword[0] >> 16) + 1;
   printk(KERN_INFO "Num IO CQ: %llu\tNum IO SQ: %llu\n",
          (unsigned long long) (cpl_.dword[0] >> 16), (unsigned long long) (cpl_.dword[0] & 0x0000ffff));
-  printk("[admin_dev_self_test] found\n");
+  printk("[admin_set_num_queues] found\n");
   admin_sq_mark_cleanup(aqp, ret1);
   admin_cq_mark_cleanup(aqp, ret2);
 }
