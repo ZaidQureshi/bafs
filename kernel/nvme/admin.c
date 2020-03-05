@@ -149,7 +149,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   aqp->sq_dma_addrs = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(dma_addr_t), GFP_KERNEL);
   aqp->cq_dma_addrs = kmalloc(aqp->num_io_queue_pairs_supported * sizeof(dma_addr_t), GFP_KERNEL);
 
-  new_qp  = admin_create_io_queue_pair(aqp);
+  //new_qp  = admin_create_io_queue_pair(aqp);
 
   
 
@@ -383,7 +383,7 @@ void admin_set_num_queues(struct admin_queue_pair* aqp) {
   u32 cid;
   clear_cmd(&cmd_);
 
-  cmd_.dword[0]  = SET_FEAT;
+  cmd_.dword[0]  = 0xC7;//SET_FEAT;
   cmd_.dword[10] = 0x07;
 
   cmd_.dword[11] = (((u32)65534) << 16) | 65534;
@@ -502,8 +502,8 @@ struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
                                          GFP_KERNEL);
 
 
-  cmd_.dword[0] = CRT_IO_SQ;
-  cmd_.dword[8] = aqp->sq_dma_addrs[i];
+  cmd_.dword[0] = CRT_IO_SQ;  // opcode for creation of IO SQ queue
+  cmd_.dword[8] = aqp->sq_dma_addrs[i]; //IO Queue Address for each pair 
   cmd_.dword[9] = aqp->sq_dma_addrs[i] >> 32;
   cmd_.dword[10] = ((qs - 1) << 16) | (i + 1);
   cmd_.dword[11] = ((i+1) << 16) | 0x01;
