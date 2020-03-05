@@ -135,7 +135,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   c->regs->INTMC = 0x0;
   
   //msleep(20000);
-  printk(KERN_INFO "[admin_init] finished second loop\n",aqp->cq.q_dma_addr, aqp->sq.q_dma_addr);
+  printk(KERN_INFO "[admin_init] finished second loop addr: %llx \n", &c->regs-ASQ);
 
   admin_set_num_queues(aqp);
 
