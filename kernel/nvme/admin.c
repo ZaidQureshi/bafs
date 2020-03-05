@@ -383,7 +383,7 @@ void admin_set_num_queues(struct admin_queue_pair* aqp) {
   u32 cid;
   clear_cmd(&cmd_);
 
-  cmd_.dword[0]  = GET_FEAT;
+  cmd_.dword[0]  = SET_FEAT;
   cmd_.dword[10] = 0x07;
 
   cmd_.dword[11] = (((u32)65534) << 16) | 65534;
