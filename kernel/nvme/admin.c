@@ -412,6 +412,48 @@ void admin_set_num_queues(struct admin_queue_pair* aqp) {
 }
 
 
+void admin_fpga_config(struct admin_queue_pair* aqp){
+  struct cmd cmd_;
+  struct cpl cpl_;
+
+  s32 ret1, ret2;
+  u32 cid; 
+  clear_cmd(&cmd_);
+
+  cmd_.dword[0]  = 0xF0; // BAFS specifc opcode
+  cmd_.dword[1]  = 0x2E5457E3; //use for IO buffer address
+  cmd_.dword[2]  = 0xBADA55F1; //use for IO buffer address
+  cmd_.dword[3]  = 0; //use for IO buffer stride
+  cmd_.dword[4]  = 0; //use for SQ base address
+  cmd_.dword[5]  = 0; //use for SQ base address
+  cmd_.dword[6]  = 0; //entry size or page size 
+  cmd_.dword[7]  = 0; //number of entries
+  cmd_.dword[8]  = 0; //offset - base address of PRPlist
+
+  ret1 = admin_enqueue_command(aqp, &cmd_);
+  while (ret1 == -1) {
+    printk(KERN_INFO "[admin_fpga_config] retry enqueuing\n");
+    ret1 = admin_enqueue_command(aqp, &cmd_);
+  }
+
+  cid = cmd_.dword[0] >> 16;
+
+  ret2 = admin_cq_poll(aqp, cid);
+  while (ret2 == -1) {
+    ret2 = admin_cq_poll(aqp, cid);
+  }
+  cpl_ = *(((volatile struct cpl*) aqp->cq.q.addr) + ret2);
+  aqp->num_io_queue_pairs_supported = (cpl_.dword[0] >> 16) + 1;
+  //printk(KERN_INFO "Num IO CQ: %llu\tNum IO SQ: %llu\n",
+  //       (unsigned long long) (cpl_.dword[0] >> 16), (unsigned long long) (cpl_.dword[0] & 0x0000ffff));
+  printk("[admin_fpga_config] complete\n");
+  admin_sq_mark_cleanup(aqp, ret1);
+  admin_cq_mark_cleanup(aqp, ret2);
+
+}
+
+
+
 
 struct queue_pair* admin_create_io_queue_pair(struct admin_queue_pair* aqp) {
   struct cmd cmd_;
