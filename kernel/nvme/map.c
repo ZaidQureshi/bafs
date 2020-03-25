@@ -1,5 +1,4 @@
 #include "map.h"
-#include "list.h"
 #include "ctrl.h"
 
 #include <linux/version.h>
@@ -26,10 +25,7 @@ struct gpu_region
 #endif
 */
 
-/*GPU Page size is 64KB assumed*/
-#define GPU_PAGE_SHIFT 16
-#define GPU_PAGE_SIZE  (1UL << GPU_PAGE_SHIFT)
-#define GPU_PAGE_MASK  ~(GPU_PAGE_SIZE - 1)
+
 
 static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigned long n_pages) {
   unsigned long i;
@@ -43,7 +39,7 @@ static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigne
     return ERR_PTR(-ENOMEM);
   }
 
-  list_node_init(&m->list);
+  //list_node_init(&m->list);
 
   m->owner     = current;
   m->vaddr     = vaddr;
@@ -62,7 +58,7 @@ static struct map* create_descriptor(const struct ctrl* ctrl, u64 vaddr, unsigne
 }
 
 void unmap_and_release_map(struct map* m) {
-  list_remove(&m->list);
+  //list_remove(&m->list);
   if ((m->release != NULL) &&
       (m->data != NULL)) {
     m->release(m);
@@ -72,6 +68,7 @@ void unmap_and_release_map(struct map* m) {
 
 }
 
+/*
 struct map* map_find(const struct list* l, u64 vaddr) {
   const struct list_node* e = list_next(&l->head);
   struct map*             m = NULL;
@@ -88,6 +85,7 @@ struct map* map_find(const struct list* l, u64 vaddr) {
 
   return NULL;
 }
+*/
 
 static void release_user_pages(struct map* m) {
   unsigned long  i;
@@ -162,7 +160,7 @@ static long map_user_pages(struct map* m) {
 }
 
 
-struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsigned long n_pages) {
+struct map* map_userspace(const struct ctrl* c, u64 vaddr, unsigned long n_pages) {
   long err;
   struct map* m;
 
@@ -183,7 +181,6 @@ struct map* map_userspace(struct list* l, const struct ctrl* c, u64 vaddr, unsig
     return ERR_PTR(err);
   }
 
-  list_insert(l, &m->list);
 
   return m;
 }

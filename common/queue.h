@@ -38,18 +38,18 @@ struct queue_pair {
 
 #ifdef KERN
 struct admin_queue_pair {
-  struct queue_k cq;
-  struct queue_k sq;
-  spinlock_t     lock;
-  struct ctrl*   c;
-  u8* queue_use_mark;
-  struct queue_pair** io_qp_list;
-  u32 num_io_queue_pairs_supported;
-  u32 num_io_queue_pairs_used;
-  dma_addr_t* sq_dma_addrs;
-  dma_addr_t* cq_dma_addrs;
-  
-
+        struct queue_k      cq;
+        struct queue_k      sq;
+        spinlock_t          lock;
+        struct ctrl*        c;
+        u8*                 queue_use_mark;
+        struct queue_pair** io_qp_list;
+        u32                 num_io_queue_pairs_supported;
+        u32                 num_io_queue_pairs_used;
+        dma_addr_t*         sq_dma_addrs;
+        dma_addr_t*         cq_dma_addrs;
+        struct list host_io_list;
+        //struct list cuda_io_list;
 };
 #endif
 

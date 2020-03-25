@@ -144,7 +144,7 @@ const char* bafs_error (uint32_t status){
     sct = _UNPACK_SCT(status);
     sc  = _UNPACK_SC(status);
 
-    printk(KERN_INFO "[debug] status field: %llx - sct: %llu - sc: %llu", status, sct, sc);
+    printk(KERN_INFO "[debug] status field: %x - sct: %x - sc: %x", (uint32_t) status, (uint32_t) sct, (uint32_t) sc);
 
     if(sct != 0 || sc != 0){
         return print_error(sct, sc);

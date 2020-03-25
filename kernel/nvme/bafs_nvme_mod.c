@@ -106,7 +106,7 @@ static struct class* dev_class;
 static struct list ctrl_list;
 
 /*list of host mapped devices*/
-static struct list host_list;
+//static struct list host_list;
 
 /*
 static struct list cuda_list;
@@ -240,6 +240,7 @@ static struct pci_driver driver =
    .remove    = remove_pci_dev,
   };
 
+/*
 static unsigned long clear_map_list(struct list* l) {
   unsigned long i = 0;
   struct list_node* ptr = list_next(&l->head);
@@ -253,13 +254,13 @@ static unsigned long clear_map_list(struct list* l) {
   }
   return i;
 }
-
+*/
 
 static int __init bafs_nvme_init(void) {
   int err;
 
   list_init(&ctrl_list);
-  list_init(&host_list);
+  //list_init(&host_list);
   /*
   list_init(&cuda_list);
   */
@@ -301,7 +302,7 @@ static int __init bafs_nvme_init(void) {
 module_init(bafs_nvme_init);
 
 static void __exit bafs_nvme_exit(void) {
-  unsigned long remaining = 0;
+  //unsigned long remaining = 0;
 
   /*
   remaining = clear_map_list(&cuda_list);
@@ -310,11 +311,12 @@ static void __exit bafs_nvme_exit(void) {
   }
   */
 
+  /*
   remaining = clear_map_list(&host_list);
   if (remaining != 0 ) {
     printk(KERN_WARNING "[bafs_nvme_exit] %lu host memory mappings were still in use on unload\n", remaining);
   }
-
+  */
   pci_unregister_driver(&driver);
   class_destroy(dev_class);
   unregister_chrdev_region(dev_first, num_ctrls);
