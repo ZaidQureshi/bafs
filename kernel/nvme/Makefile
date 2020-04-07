@@ -2,7 +2,7 @@ SHELL = /bin/bash
 
 TARGET_MODULE:=bafs_nvme
 
-EXTRA_CFLAGS := -DKERN
+EXTRA_CFLAGS := -DKERN -DTEST
 
 ifneq ($(KERNELRELEASE),)
 	$(TARGET_MODULE)-objs := bafs_nvme_mod.o map.o ctrl.o list.o admin.o

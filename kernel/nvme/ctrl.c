@@ -21,7 +21,14 @@
 
 struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, int number) {
   struct ctrl* c = NULL;
-
+#ifdef TEST
+#define NUM 1000
+#define SIZE (4ULL * 1024ULL * 1024ULL)
+    dma_addr_t* dma_addrs = kmalloc(NUM*sizeof(dma_addr_t), GFP_KERNEL);
+    void** addrs = kmalloc(NUM*sizeof(void*), GFP_KERNEL);
+    u64 cnt = 0;
+    u64 v = 0;
+#endif
   c = kmalloc(sizeof(struct ctrl), GFP_KERNEL | GFP_NOWAIT);
   if (c == NULL) {
     printk(KERN_CRIT "[ctrl_get] Failed to allocate controller reference\n");
@@ -51,7 +58,26 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
     return ERR_PTR(-ENOMEM);
   }
 
-  admin_init(c->aqp, c);
+  //admin_init(c->aqp, c);
+
+#ifdef TEST
+  for (cnt = 0; cnt < NUM; cnt++) {
+    addrs[cnt] = dma_alloc_coherent(&pdev->dev, SIZE, dma_addrs + cnt, GFP_KERNEL);
+    if(dma_mapping_error(&pdev->dev, dma_addrs[cnt])) {
+      printk(KERN_INFO "----- dma_alloc_coherent %llu failed!\n", cnt);
+      break;
+    }
+    else {
+      v++;
+      printk(KERN_INFO "+++++ dma_alloc_coherent %llu passed: %llx!\n", cnt, (u64)(dma_addrs[cnt]));
+    }
+  }
+  for (cnt = 0; cnt < v; cnt++) {
+    dma_free_coherent(&pdev->dev, SIZE, addrs[cnt], dma_addrs[cnt]);
+  }
+  kfree(dma_addrs);
+  kfree(addrs);
+#endif
 
   list_insert(l, &c->list);
 
@@ -68,7 +94,7 @@ void ctrl_put(struct ctrl* c) {
   if (c != NULL) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
-    admin_clean(c->aqp);
+    //admin_clean(c->aqp);
     kfree(c->aqp);
     kfree(c);
   }
