@@ -22,7 +22,7 @@
 struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, int number) {
   struct ctrl* c = NULL;
 #ifdef TEST
-#define NUM 1000
+#define NUM 4096
 #define SIZE (4ULL * 1024ULL * 1024ULL)
     dma_addr_t* dma_addrs = kmalloc(NUM*sizeof(dma_addr_t), GFP_KERNEL);
     void** addrs = kmalloc(NUM*sizeof(void*), GFP_KERNEL);
