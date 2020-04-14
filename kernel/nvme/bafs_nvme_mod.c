@@ -162,6 +162,7 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
     //pci_free_irq_vectors(pdev);
     /*Requests the bus to become master of DMA and enables it*/
     pci_set_master(pdev);
+    dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(64));
 
     printk(KERN_INFO "[add_pci_dev] Adding controller device: %02x:%02x.%1x",
            pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
@@ -190,7 +191,6 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
       printk(KERN_ERR "[add_pci_dev] Failed to enable controller\n");
       return err;
     }
-
     /*Creates the device file for access. Also note, when it fails, we need to clean up all the previous steps one after other*/
     err = ctrl_chrdev_create(c, dev_first, &dev_fops);
     if (err != 0) {

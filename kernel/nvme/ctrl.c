@@ -22,8 +22,8 @@
 struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, int number) {
   struct ctrl* c = NULL;
 #ifdef TEST
-#define NUM 4096
-#define SIZE (4ULL * 1024ULL * 1024ULL)
+#define NUM 2
+#define SIZE (4*1024ULL * 1024ULL * 1024ULL)
     dma_addr_t* dma_addrs = kmalloc(NUM*sizeof(dma_addr_t), GFP_KERNEL);
     void** addrs = kmalloc(NUM*sizeof(void*), GFP_KERNEL);
     u64 cnt = 0;
@@ -58,12 +58,12 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
     return ERR_PTR(-ENOMEM);
   }
 
-  //admin_init(c->aqp, c);
+  admin_init(c->aqp, c);
 
 #ifdef TEST
   for (cnt = 0; cnt < NUM; cnt++) {
-    addrs[cnt] = dma_alloc_coherent(&pdev->dev, SIZE, dma_addrs + cnt, GFP_KERNEL);
-    if(dma_mapping_error(&pdev->dev, dma_addrs[cnt])) {
+    addrs[cnt] = dma_alloc_coherent(&pdev->dev, SIZE, dma_addrs + cnt, GFP_KERNEL | __GFP_COMP);
+    if(addrs[cnt] == NULL) {
       printk(KERN_INFO "----- dma_alloc_coherent %llu failed!\n", cnt);
       break;
     }
@@ -94,7 +94,7 @@ void ctrl_put(struct ctrl* c) {
   if (c != NULL) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
-    //admin_clean(c->aqp);
+    admin_clean(c->aqp);
     kfree(c->aqp);
     kfree(c);
   }

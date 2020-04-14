@@ -2,7 +2,9 @@ SHELL = /bin/bash
 
 TARGET_MODULE:=bafs_nvme
 
-EXTRA_CFLAGS := -DKERN -DTEST
+EXTRA_CFLAGS := -DKERN -DTEST2
+
+#KBUILD_EXTRA_SYMBOLS := /home/zaid/linux-stable/Module.symvers
 
 ifneq ($(KERNELRELEASE),)
 	$(TARGET_MODULE)-objs := bafs_nvme_mod.o map.o ctrl.o list.o admin.o
