@@ -139,12 +139,122 @@ static int mmap_regs(struct file* f, struct vm_area_struct* vma) {
   return vm_iomap_memory(vma, pci_resource_start(c->pdev, 0), (vma->vm_end - vma->vm_start));
 
 }
+#ifdef TEST2
+
+#include <linux/fs.h>
+#include "nv-linux.h"
+#include "nv.h"
+#include "uvm8_api.h"
+#include "uvm8_global.h"
+#include "uvm8_gpu_replayable_faults.h"
+#include "uvm8_tools_init.h"
+#include "uvm8_lock.h"
+#include "uvm8_test.h"
+#include "uvm8_va_space.h"
+#include "uvm8_va_range.h"
+#include "uvm8_va_block.h"
+#include "uvm8_tools.h"
+#include "uvm_common.h"
+#include "uvm_linux_ioctl.h"
+#include "uvm8_hmm.h"
+#include "uvm8_mem.h"
+
+
+static NV_STATUS my_uvm_api_initialize(UVM_INITIALIZE_PARAMS *params, struct file *filp)
+{
+    NV_STATUS status = NV_OK;
+    uvm_va_space_t *va_space = uvm_va_space_get(filp);
+
+    if ((params->flags & ~UVM_INIT_FLAGS_MASK))
+        return NV_ERR_INVALID_ARGUMENT;
+
+    uvm_down_write_mmap_sem(&current->mm->mmap_sem);
+    uvm_va_space_down_write(va_space);
+
+    if (atomic_read(&va_space->initialized)) {
+        // Already initialized - check if parameters match
+        if (params->flags != va_space->initialization_flags)
+            status = NV_ERR_INVALID_ARGUMENT;
+    }
+    else {
+        va_space->initialization_flags = params->flags;
+
+        status = uvm_hmm_mirror_register(va_space);
+        if (status == NV_OK) {
+            // Use release semantics to match the acquire semantics in
+            // uvm_va_space_initialized. See that function for details. All
+            // initialization must be complete by this point.
+            atomic_set_release(&va_space->initialized, 1);
+        }
+    }
+
+    uvm_va_space_up_write(va_space);
+    uvm_up_write_mmap_sem(&current->mm->mmap_sem);
+
+    return status;
+}
+
+void test_uvm(void) {
+  struct file* uvm_file;
+  UVM_INITIALIZE_PARAMS params;
+  NV_STATUS status = NV_OK;
+  uvm_va_space_t *va_space;
+
+  uvm_file = filp_open("/dev/nvidia-uvm", O_RDWR, 0);
+  if (uvm_file != NULL) {
+    params.flags = UVM_INIT_FLAGS_MASK;
+    va_space = uvm_va_space_get(uvm_file);
+    printk(KERN_CRIT "uvm_va_space_get %llx\n", va_space);
+    /*
+      status = my_uvm_api_initialize(&params, uvm_file);
+      if (status != NV_OK) {
+      printk(KERN_CRIT "Failed to initialize!\n");
+      }
+      else {
+      printk(KERN_CRIT "UVM Success!\n");
+      }
+    */
+
+    filp_close(uvm_file,NULL);
+  }
+
+  else {
+    printk(KERN_CRIT "Could not open uvm file!\n");
+  }
+}
+#endif
+static long custom_ioctl(struct file* file, unsigned int cmd, unsigned long arg) {
+  long retval = 0;
+  struct ctrl* ctrl = NULL;
+  //struct nvm_ioctl_map request;
+  struct map* map = NULL;
+  u64 addr;
+
+  ctrl = ctrl_find_by_inode(&ctrl_list, file->f_inode);
+  if (ctrl == NULL) {
+    printk(KERN_CRIT "Unknown controller reference\n");
+    return -EBADF;
+  }
+
+  switch (cmd)
+  {
+    case 0:
+#ifdef TEST2
+      test_uvm();
+#endif
+      break;
+    default:
+      break;
+  }
+  return retval;
+}
 
 /*Types of file operations supported for device file*/
 static const struct file_operations dev_fops =
   {
-   .owner = THIS_MODULE,
-   .mmap  = mmap_regs,
+  .owner = THIS_MODULE,
+  .unlocked_ioctl = custom_ioctl,
+  .mmap  = mmap_regs,
   };
 
 
@@ -204,7 +314,7 @@ static int add_pci_dev(struct pci_dev* pdev, const struct pci_device_id* id) {
 
 
     print_hex_dump(KERN_INFO, "raw_data: ", DUMP_PREFIX_ADDRESS, 16, 1, (u8*) c->reg_addr, 4*16, false);
-    printk(KERN_INFO "[add_pci_dev]\tAddr: %p\tCAP: %llx\tCC: %x\n", c->reg_addr, c->regs->CAP, c->regs->CC);
+    printk(KERN_INFO "[add_pci_dev]\tAddr: %p\tCAP0: %llx\tCAP1: %llx\tCC: %x\n", c->reg_addr, c->regs->CAP[0], c->regs->CAP[1], c->regs->CC);
     return 0;
 }
 
@@ -259,6 +369,14 @@ static unsigned long clear_map_list(struct list* l) {
 }
 */
 
+static char* custom_devnode(struct device* dev, umode_t* mode) {
+  if (!mode)
+    return NULL;
+
+  *mode = 0666;
+  return NULL;
+}
+
 static int __init bafs_nvme_init(void) {
   int err;
 
@@ -285,6 +403,8 @@ static int __init bafs_nvme_init(void) {
 
   }
 
+  dev_class->devnode = custom_devnode;
+
   /*Adds the driver structure to the list of registered drivers. 
   * Returns a negative value on error, otherwise 0. 
   * If no error occurred, the driver remains registered even if no device was claimed during registration.*/
@@ -298,6 +418,9 @@ static int __init bafs_nvme_init(void) {
   }
 
   printk(KERN_INFO "[bafs_nvme_init] Driver Loaded\n");
+#ifdef TEST2
+  test_uvm();
+#endif
   return 0;
 
 }

@@ -17,8 +17,8 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   volatile u32*      csts = &c->regs->CSTS;
 
 //Read the maximum individual IO queue size supported by the controller. +1 is added for easier check
-  //u32 queue_size       = ((volatile u16*)(&c->regs->CAP))[0] + 1;
-  u32 queue_size         = _RDBITS(c->regs->CAP, 15, 0) + 1;
+  //u32 queue_size       = ((volatile u16*)(&c->regs->CAP[0]))[0] + 1;
+  u32 queue_size         = _RDBITS(c->regs->CAP[0], 15, 0) + 1;
   aqp->c                 = c;
   aqp->c->max_queue_size = queue_size;
   queue_size             = queue_size > 4096 ? 4096 : queue_size;
@@ -72,15 +72,14 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //printk(KERN_INFO "sq db: %llx\n", aqp->sq.q.db);
 
   //read the doorbel register stide
-  //c->dstrd = ((volatile u32*)(&c->regs->CAP))[1] & 0x0f;
-  c->dstrd   = _RDBITS(c->regs->CAP, 35, 32);
+  c->dstrd   = _RDBITS(c->regs->CAP[1], (35-32), (32-32));
 
   //printk(KERN_WARNING "DSTRD: %lx\n", c->dstrd);
   //read the max page size
   //mpsmax = (c->regs->CAP & 0x00ffffffffffffff) >> 52;
-  mpsmax   = _RDBITS(c->regs->CAP, 51, 48);
+  mpsmax   = _RDBITS(c->regs->CAP[1], (51-32), (48-32));
 
-  c->timeout   = _RDBITS(c->regs->CAP, 31, 24);
+  c->timeout   = _RDBITS(c->regs->CAP[0], 31, 24);
   //c->timeout = (c->regs->CAP & 0x00000000ffffffff) >> 24;
 
   c->page_size = 1 << (12 + mpsmax);
@@ -94,7 +93,7 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
          (unsigned long long) queue_size,
          (unsigned long long) cqes, (unsigned long long) aqp->cq.q.es, (unsigned long long) sqes, (unsigned long long) aqp->sq.q.es,
          (unsigned long long) ps, (unsigned long long) c->page_size, (unsigned long long) mpsmax, (unsigned long long) c->timeout, aqp->cq.q_dma_addr, aqp->sq.q_dma_addr,
-          (unsigned long long) (_RDBITS(c->regs->CAP, 55, 52)), (unsigned long long) (_RDBITS(c->regs->CAP, 51, 48)));
+          (unsigned long long) (_RDBITS(c->regs->CAP[1], (55-32), (52-32))), (unsigned long long) (_RDBITS(c->regs->CAP[1], (51-32), (48-32))));
 
   aqp->cq.q.db = (volatile u32*)(((volatile u8*)aqp->sq.q.db) + (1 * (4 << c->dstrd)));
 
@@ -117,9 +116,11 @@ void admin_init(struct admin_queue_pair* aqp, struct ctrl* c) {
   //Program the admin queue 
   c->regs->AQA = ((queue_size-1) << 16) | (queue_size-1);
 
-  c->regs->ACQ = aqp->cq.q_dma_addr;
+  c->regs->ACQ[0] = (u32) aqp->cq.q_dma_addr;
+  c->regs->ACQ[1] = (u32) (aqp->cq.q_dma_addr >> 32);
 
-  c->regs->ASQ = aqp->sq.q_dma_addr;
+  c->regs->ASQ[0] = (u32) aqp->sq.q_dma_addr;
+  c->regs->ASQ[1] = (u32) (aqp->sq.q_dma_addr >> 32);
 
   //program the CQ, SQ and Max page size and reset the controller. 
   // by default we have round robin arbitration scheme for SQ-CQ pair. 

@@ -23,7 +23,7 @@
 *  Later will use this to point to the respective CQ and SQ entries. 
 */
 struct nvme_regs {
-  u64 CAP;
+  u32 CAP[2];
   u32 VS;
   u32 INTMS;
   u32 INTMC;
@@ -32,8 +32,8 @@ struct nvme_regs {
   u32 CSTS;
   u32 NSSR;
   u32 AQA;
-  u64 ASQ;
-  u64 ACQ;
+  u32 ASQ[2];
+  u32 ACQ[2];
   u32 CMBLOC;
   u32 CMBSZ;
   u32 BPINFO;

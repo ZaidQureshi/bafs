@@ -8,8 +8,9 @@
 #include <linux/device.h>
 #include <linux/pci.h>
 #include <linux/slab.h>
+#include <asm-generic/io.h>
 #include <asm/errno.h>
-
+#include "../../common/bafs_utils.h"
 
 
 /* ctrl_get creates a controller reference in the kernel space. 
@@ -17,6 +18,8 @@
 *  We also perform the admin queue pair allocation in the controller
 *  and initial it. 
 */
+
+
 
 
 struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, int number) {
@@ -29,6 +32,8 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
     u64 cnt = 0;
     u64 v = 0;
 #endif
+
+  volatile u64* temp;
   c = kmalloc(sizeof(struct ctrl), GFP_KERNEL | GFP_NOWAIT);
   if (c == NULL) {
     printk(KERN_CRIT "[ctrl_get] Failed to allocate controller reference\n");
@@ -51,14 +56,18 @@ struct ctrl* ctrl_get(struct list* l, struct class* cls, struct pci_dev* pdev, i
   c->reg_len  = pci_resource_len(c->pdev, 0);
   c->regs     = (volatile struct nvme_regs*)c->reg_addr;
 
-  printk(KERN_INFO "Reg ADDR: %llx\tReg LEN: %llu\tCAP: %llx\n", (long long unsigned int) c->reg_addr, (unsigned long long) c->reg_len, (long long unsigned int) c->regs->CAP);
+  temp = (volatile u64*) (c->reg_addr + 0x30);
+  *temp = 0x1234567890abcdef;
+
+  printk(KERN_INFO "Reg ADDR: %llx\tReg LEN: %llu\tCAP0: %llx\tCAP1: %llx\tMPSMIN: %llu\tMPSMAX: %llu\n", (long long unsigned int) c->reg_addr, (unsigned long long) c->reg_len, (uint64_t) (( u32*)(c->reg_addr))[0], (uint64_t) (( u32*)(c->reg_addr))[1],
+  (long long unsigned int) _RDBITS(c->regs->CAP[1], (51-32), (48-32)), (long long unsigned int) _RDBITS(c->regs->CAP[1], (55-32), (52-32)));
   c->aqp      = kmalloc(sizeof(struct admin_queue_pair), GFP_KERNEL | GFP_NOWAIT);
   if (c->aqp == NULL) {
     printk(KERN_ERR "[ctrl_get] Failed to alocated admin queue\n");
     return ERR_PTR(-ENOMEM);
   }
 
-  admin_init(c->aqp, c);
+  //admin_init(c->aqp, c);
 
 #ifdef TEST
   for (cnt = 0; cnt < NUM; cnt++) {
@@ -94,7 +103,7 @@ void ctrl_put(struct ctrl* c) {
   if (c != NULL) {
     list_remove(&c->list);
     ctrl_chrdev_remove(c);
-    admin_clean(c->aqp);
+    //admin_clean(c->aqp);
     kfree(c->aqp);
     kfree(c);
   }
